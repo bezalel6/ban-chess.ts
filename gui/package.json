@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "ban-chess.ts": "^1.0.1",
+    "ban-chess.ts": "file:..",
     "preact": "^10.27.0"
   },
   "devDependencies": {
