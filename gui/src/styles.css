@@ -1,5 +1,14 @@
 /* Ban Chess GUI Styles */
 
+:root {
+  /* Dynamic CSS variables */
+  --board-size: 4rem;
+  --stroke-width: 16;
+  --stroke-opacity: 1;
+  --piece-contrast: 1;
+  --piece-brightness: 1;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -145,21 +154,14 @@ body {
 }
 
 .board-square {
-  width: 3.5rem;
-  height: 3.5rem;
+  width: var(--board-size);
+  height: var(--board-size);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
   transition: all 0.2s;
-}
-
-@media (min-width: 768px) {
-  .board-square {
-    width: 4rem;
-    height: 4rem;
-  }
 }
 
 .square-light {
@@ -245,19 +247,25 @@ body {
 }
 
 /* Chess Pieces */
+.piece-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .chess-piece {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: calc(var(--board-size) * 0.7);
+  height: calc(var(--board-size) * 0.7);
   user-select: none;
   pointer-events: none;
 }
 
 .piece-white {
-  filter: none;
+  filter: contrast(var(--piece-contrast)) brightness(var(--piece-brightness));
 }
 
 .piece-black {
-  filter: invert(1);
+  filter: invert(1) contrast(var(--piece-contrast)) brightness(var(--piece-brightness));
 }
 
 /* Board Labels */
@@ -403,4 +411,67 @@ body {
 
 .game-over p {
   font-size: 1.125rem;
+}
+
+/* Visual Controls */
+.controls-section {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.controls-toggle {
+  margin-bottom: 1rem;
+}
+
+.controls-panel {
+  background-color: #111827;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.control-label {
+  font-size: 0.875rem;
+  color: #d1d5db;
+  font-weight: 500;
+}
+
+.control-slider {
+  width: 100%;
+  height: 6px;
+  background: #374151;
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #fbbf24;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.control-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #fbbf24;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
 }

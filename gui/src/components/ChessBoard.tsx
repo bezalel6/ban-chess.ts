@@ -48,10 +48,28 @@ export function ChessBoard() {
   const [autoFlip, setAutoFlip] = useState(true);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [, forceUpdate] = useState({});
+  
+  // Visual customization states
+  const [boardSize, setBoardSize] = useState(4);
+  const [strokeWidth, setStrokeWidth] = useState(16);
+  const [strokeOpacity, setStrokeOpacity] = useState(1);
+  const [pieceContrast, setPieceContrast] = useState(1);
+  const [pieceBrightness, setPieceBrightness] = useState(1);
+  const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
     updateBoard();
   }, []);
+
+  // Update CSS variables when settings change
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--board-size', `${boardSize}rem`);
+    root.style.setProperty('--stroke-width', `${strokeWidth}`);
+    root.style.setProperty('--stroke-opacity', `${strokeOpacity}`);
+    root.style.setProperty('--piece-contrast', `${pieceContrast}`);
+    root.style.setProperty('--piece-brightness', `${pieceBrightness}`);
+  }, [boardSize, strokeWidth, strokeOpacity, pieceContrast, pieceBrightness]);
 
   const updateBoard = () => {
     const fen = game.fen().split(' ')[0];
@@ -187,11 +205,18 @@ export function ChessBoard() {
     if (!svgPath) return null;
     
     return (
-      <img 
-        src={svgPath}
-        alt={piece}
-        className={`chess-piece ${isWhite ? 'piece-white' : 'piece-black'}`}
-      />
+      <div 
+        className="piece-wrapper"
+        style={{
+          opacity: strokeOpacity
+        }}
+      >
+        <img 
+          src={svgPath}
+          alt={piece}
+          className={`chess-piece ${isWhite ? 'piece-white' : 'piece-black'}`}
+        />
+      </div>
     );
   };
 
@@ -217,6 +242,95 @@ export function ChessBoard() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Visual Controls */}
+      <div className="controls-section">
+        <button 
+          className="btn btn-secondary controls-toggle"
+          onClick={() => setShowControls(!showControls)}
+        >
+          {showControls ? '🎨 Hide Controls' : '🎨 Show Controls'}
+        </button>
+        
+        {showControls && (
+          <div className="controls-panel">
+            <div className="control-group">
+              <label className="control-label">
+                Board Size: {boardSize}rem
+              </label>
+              <input
+                type="range"
+                min="3"
+                max="8"
+                step="0.5"
+                value={boardSize}
+                onChange={(e) => setBoardSize(parseFloat(e.target.value))}
+                className="control-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Stroke Width: {strokeWidth}px
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="32"
+                step="2"
+                value={strokeWidth}
+                onChange={(e) => setStrokeWidth(parseInt(e.target.value))}
+                className="control-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Stroke Opacity: {Math.round(strokeOpacity * 100)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={strokeOpacity}
+                onChange={(e) => setStrokeOpacity(parseFloat(e.target.value))}
+                className="control-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Piece Contrast: {Math.round(pieceContrast * 100)}%
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value={pieceContrast}
+                onChange={(e) => setPieceContrast(parseFloat(e.target.value))}
+                className="control-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Piece Brightness: {Math.round(pieceBrightness * 100)}%
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="1.5"
+                step="0.1"
+                value={pieceBrightness}
+                onChange={(e) => setPieceBrightness(parseFloat(e.target.value))}
+                className="control-slider"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Game Info */}
