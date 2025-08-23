@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { BanChess } from 'ban-chess.ts';
-import type { Move, Ban } from 'ban-chess.ts';
+import type { Move } from 'ban-chess.ts';
 
 const PIECE_SVGS: Record<string, string> = {
   'K': '/chess-king.svg',
@@ -12,7 +12,6 @@ const PIECE_SVGS: Record<string, string> = {
 };
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];  // FEN order: rank 8 first
 
 // Simple audio using Web Audio API
 function playSound(frequency: number, duration: number = 100) {
@@ -190,7 +189,7 @@ export function ChessBoard() {
     forceUpdate({});
   };
 
-  const getPieceSvg = (piece: string | null, rank: number, file: number) => {
+  const getPieceSvg = (piece: string | null) => {
     if (!piece) return null;
     
     const isWhite = piece === piece.toUpperCase();
@@ -337,7 +336,7 @@ export function ChessBoard() {
                     
                     {/* Piece */}
                     <div className="relative z-10">
-                      {getPieceSvg(piece, displayRank, displayFile)}
+                      {getPieceSvg(piece)}
                     </div>
                     
                     {/* Ban indicator overlay */}
