@@ -40,6 +40,8 @@ pnpm-lock.yaml
 
 # Claude configuration
 CLAUDE.md
+CLAUDE.local.md
+*.local.md
 
 # Temporary files
 *.tmp
