@@ -4,8 +4,5 @@ import preact from '@preact/preset-vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [preact()],
-  base: '/ban-chess.ts/',
-  css: {
-    postcss: './postcss.config.cjs'
-  }
+  base: '/ban-chess.ts/'
 })
