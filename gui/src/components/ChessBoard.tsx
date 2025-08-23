@@ -203,12 +203,10 @@ export function ChessBoard() {
       <img 
         src={svgPath}
         alt={piece}
-        className={`select-none pointer-events-none`}
+        className={`w-10 h-10 select-none pointer-events-none ${
+          isWhite ? 'invert' : ''
+        }`}
         style={{
-          width: '40px',
-          height: '40px',
-          maxWidth: '100%',
-          maxHeight: '100%',
           filter: isWhite 
             ? 'invert(1) drop-shadow(1px 0 0 rgba(0,0,0,0.4)) drop-shadow(0 1px 0 rgba(0,0,0,0.4))' 
             : 'drop-shadow(1px 0 0 rgba(255,255,255,0.4)) drop-shadow(0 1px 0 rgba(255,255,255,0.4))'
@@ -313,17 +311,9 @@ export function ChessBoard() {
                   <div
                     key={`${displayRank}-${displayFile}`}
                     onClick={() => handleSquareClick(displayRank, displayFile)}
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'all 0.2s'
-                    }}
                     className={`
+                      w-14 h-14 md:w-16 md:h-16 flex items-center justify-center
+                      cursor-pointer relative transition-all duration-200
                       ${getSquareColor(displayRank, displayFile)}
                       ${isSelected ? 'ring-4 ring-cyan-400 ring-inset z-10 scale-105' : ''}
                       ${isLegal ? 'ring-4 ring-emerald-400 ring-inset' : ''}
