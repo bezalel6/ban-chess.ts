@@ -1,0 +1,26 @@
+# Source files (only include dist)
+src/
+tests/
+
+# GUI application
+gui/
+
+# Development files
+.github/
+.vscode/
+.claude/
+
+# Config files
+tsconfig.json
+jest.config.js
+.gitignore
+CLAUDE.md
+CLAUDE.local.md
+
+# Build artifacts
+*.tgz
+npm-debug.log*
+
+# Documentation source
+*.md
+!README.md

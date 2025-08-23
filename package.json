@@ -23,8 +23,16 @@
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["chess", "ban-chess", "typescript", "chess-variant", "board-game"],
+  "author": "bezalel6",
+  "homepage": "https://github.com/bezalel6/ban-chess.ts#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bezalel6/ban-chess.ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bezalel6/ban-chess.ts/issues"
+  },
   "license": "ISC",
   "type": "module",
   "dependencies": {
