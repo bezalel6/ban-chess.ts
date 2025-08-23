@@ -52,24 +52,79 @@ export function ChessBoard() {
   // Visual customization states
   const [boardSize, setBoardSize] = useState(4);
   const [strokeWidth, setStrokeWidth] = useState(16);
+  const [pieceScale, setPieceScale] = useState(1);
   const [strokeOpacity, setStrokeOpacity] = useState(1);
   const [pieceContrast, setPieceContrast] = useState(1);
   const [pieceBrightness, setPieceBrightness] = useState(1);
   const [showControls, setShowControls] = useState(true);
+  const [originalSvgs, setOriginalSvgs] = useState<Record<string, string>>({});
+  const [modifiedSvgs, setModifiedSvgs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     updateBoard();
+    loadSVGs();
   }, []);
+
+  // Load and cache SVGs
+  const loadSVGs = async () => {
+    const cache: Record<string, string> = {};
+    for (const [piece, path] of Object.entries(PIECE_SVGS)) {
+      try {
+        const response = await fetch(path);
+        const svgText = await response.text();
+        cache[piece] = svgText;
+      } catch (error) {
+        console.error(`Failed to load SVG for ${piece}:`, error);
+      }
+    }
+    setOriginalSvgs(cache);
+  };
+
+  // Update SVGs when stroke width or piece scale changes
+  useEffect(() => {
+    if (Object.keys(originalSvgs).length > 0) {
+      const updated: Record<string, string> = {};
+      for (const [piece, originalSvg] of Object.entries(originalSvgs)) {
+        let modifiedSvg = originalSvg;
+        
+        // Update stroke-width
+        modifiedSvg = modifiedSvg.replace(/stroke-width="[^"]*"/g, `stroke-width="${strokeWidth}"`);
+        
+        // Handle piece scaling
+        const viewBoxMatch = modifiedSvg.match(/viewBox="0 0 (\d+) (\d+)"/);
+        if (viewBoxMatch) {
+          const width = parseInt(viewBoxMatch[1]);
+          const height = parseInt(viewBoxMatch[2]);
+          const centerX = width / 2;
+          const centerY = height / 2;
+          
+          // Apply transform to the group containing the path
+          const transformValue = pieceScale !== 1 
+            ? `transform="translate(${centerX}, ${centerY}) scale(${pieceScale}) translate(-${centerX}, -${centerY})"` 
+            : '';
+          
+          // Update existing group transform or add it if not present
+          if (modifiedSvg.includes('<g>')) {
+            modifiedSvg = modifiedSvg.replace(/<g[^>]*>/, `<g ${transformValue}>`);
+          } else if (modifiedSvg.includes('<g ')) {
+            modifiedSvg = modifiedSvg.replace(/<g /, `<g ${transformValue} `);
+          }
+        }
+        
+        updated[piece] = modifiedSvg;
+      }
+      setModifiedSvgs(updated);
+    }
+  }, [strokeWidth, pieceScale, originalSvgs]);
 
   // Update CSS variables when settings change
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--board-size', `${boardSize}rem`);
-    root.style.setProperty('--stroke-width', `${strokeWidth}`);
     root.style.setProperty('--stroke-opacity', `${strokeOpacity}`);
     root.style.setProperty('--piece-contrast', `${pieceContrast}`);
     root.style.setProperty('--piece-brightness', `${pieceBrightness}`);
-  }, [boardSize, strokeWidth, strokeOpacity, pieceContrast, pieceBrightness]);
+  }, [boardSize, strokeOpacity, pieceContrast, pieceBrightness]);
 
   const updateBoard = () => {
     const fen = game.fen().split(' ')[0];
@@ -200,9 +255,18 @@ export function ChessBoard() {
   const renderPiece = (piece: string) => {
     const isWhite = piece === piece.toUpperCase();
     const pieceType = piece.toUpperCase();
-    const svgPath = PIECE_SVGS[pieceType];
     
-    if (!svgPath) return null;
+    // Use modified SVG if available, otherwise fall back to original path
+    const svgContent = modifiedSvgs[pieceType];
+    let imageSrc = PIECE_SVGS[pieceType];
+    
+    if (svgContent) {
+      // Convert SVG string to data URL
+      const encodedSvg = encodeURIComponent(svgContent);
+      imageSrc = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
+    }
+    
+    if (!imageSrc) return null;
     
     return (
       <div 
@@ -212,7 +276,7 @@ export function ChessBoard() {
         }}
       >
         <img 
-          src={svgPath}
+          src={imageSrc}
           alt={piece}
           className={`chess-piece ${isWhite ? 'piece-white' : 'piece-black'}`}
         />
@@ -272,7 +336,7 @@ export function ChessBoard() {
 
             <div className="control-group">
               <label className="control-label">
-                Stroke Width: {strokeWidth}px
+                Stroke Width (Outline): {strokeWidth}px
               </label>
               <input
                 type="range"
@@ -281,6 +345,21 @@ export function ChessBoard() {
                 step="2"
                 value={strokeWidth}
                 onChange={(e) => setStrokeWidth(parseInt(e.target.value))}
+                className="control-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Piece Thickness: {Math.round(pieceScale * 100)}%
+              </label>
+              <input
+                type="range"
+                min="0.7"
+                max="1.3"
+                step="0.05"
+                value={pieceScale}
+                onChange={(e) => setPieceScale(parseFloat(e.target.value))}
                 className="control-slider"
               />
             </div>
