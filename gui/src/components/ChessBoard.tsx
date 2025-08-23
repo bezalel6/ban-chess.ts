@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
-import { BanChess, Move, Ban } from 'ban-chess.ts';
+import { BanChess } from 'ban-chess.ts';
+import type { Move, Ban } from 'ban-chess.ts';
 
 const PIECES: Record<string, string> = {
   'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
