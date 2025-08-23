@@ -432,6 +432,6 @@ game.legalBans();    // Available bans
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+ISC License - see [LICENSE](LICENSE) file for details.
 
 
