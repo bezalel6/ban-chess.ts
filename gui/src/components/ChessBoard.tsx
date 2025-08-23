@@ -125,7 +125,7 @@ export function ChessBoard() {
           setSelectedSquare(null);
           setSelectedBan(null);
         } else {
-          const pieceAtSquare = board[displayRank]?.[displayFile];
+          const pieceAtSquare = getPieceAtSquare(displayRank, displayFile);
           if (pieceAtSquare && legalMoves.some(m => m.from === square)) {
             setSelectedSquare(square);
           } else {
@@ -133,7 +133,7 @@ export function ChessBoard() {
           }
         }
       } else {
-        const pieceAtSquare = board[displayRank]?.[displayFile];
+        const pieceAtSquare = getPieceAtSquare(displayRank, displayFile);
         if (pieceAtSquare && legalMoves.some(m => m.from === square)) {
           setSelectedSquare(square);
         }
