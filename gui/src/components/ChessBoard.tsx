@@ -40,6 +40,7 @@ export function ChessBoard() {
   const [legalMoves, setLegalMoves] = useState<Move[]>([]);
   const [legalBans, setLegalBans] = useState<Move[]>([]);
   const [lastMove, setLastMove] = useState<{from: string, to: string} | null>(null);
+  const [flipped, setFlipped] = useState(false);
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
@@ -72,8 +73,18 @@ export function ChessBoard() {
     return isLight ? 'bg-yellow-100' : 'bg-yellow-700';
   };
 
-  const getSquareNotation = (rank: number, file: number) => {
-    return FILES[file] + RANKS[rank];
+  const getSquareNotation = (displayRank: number, displayFile: number) => {
+    // Convert display coordinates to actual board coordinates
+    const actualRank = flipped ? 7 - displayRank : displayRank;
+    const actualFile = flipped ? 7 - displayFile : displayFile;
+    return FILES[actualFile] + RANKS[actualRank];
+  };
+  
+  const getBoardSquare = (displayRank: number, displayFile: number) => {
+    // Get the actual piece at this display position
+    const actualRank = flipped ? 7 - displayRank : displayRank;
+    const actualFile = flipped ? 7 - displayFile : displayFile;
+    return board[actualRank]?.[actualFile] || null;
   };
 
   const isLegalTarget = (square: string) => {
@@ -205,21 +216,22 @@ export function ChessBoard() {
       {/* Chess Board */}
       <div className="relative">
         <div className="absolute -top-6 left-0 right-0 flex justify-around px-6">
-          {FILES.map(file => (
+          {(flipped ? [...FILES].reverse() : FILES).map(file => (
             <div key={file} className="text-xs font-bold text-gray-600">{file}</div>
           ))}
         </div>
         <div className="absolute -left-6 top-0 bottom-0 flex flex-col justify-around py-6">
-          {RANKS.map(rank => (
+          {(flipped ? [...RANKS].reverse() : RANKS).map(rank => (
             <div key={rank} className="text-xs font-bold text-gray-600">{rank}</div>
           ))}
         </div>
         
         <div className="border-4 border-gray-800">
           <div className="grid grid-cols-8 gap-0">
-            {board.map((row, rankIndex) => 
-              row.map((piece, fileIndex) => {
-                const square = getSquareNotation(rankIndex, fileIndex);
+            {[0,1,2,3,4,5,6,7].map(displayRank => 
+              [0,1,2,3,4,5,6,7].map(displayFile => {
+                const square = getSquareNotation(displayRank, displayFile);
+                const piece = getBoardSquare(displayRank, displayFile);
                 const isSelected = square === selectedSquare;
                 const isLegal = selectedSquare && isLegalTarget(square);
                 const isBanned = game.currentBannedMove && 
@@ -230,12 +242,12 @@ export function ChessBoard() {
                 
                 return (
                   <div
-                    key={square}
-                    onClick={() => handleSquareClick(rankIndex, fileIndex)}
+                    key={`${displayRank}-${displayFile}`}
+                    onClick={() => handleSquareClick(displayRank, displayFile)}
                     className={`
                       w-12 h-12 md:w-16 md:h-16 flex items-center justify-center
                       cursor-pointer relative transition-all duration-200
-                      ${getSquareColor(rankIndex, fileIndex)}
+                      ${getSquareColor(displayRank, displayFile)}
                       ${isSelected ? 'ring-4 ring-blue-500 ring-inset z-10 scale-105' : ''}
                       ${isLegal ? 'ring-4 ring-green-400 ring-inset' : ''}
                       ${canSelect && !isSelected ? 'hover:brightness-110' : ''}
@@ -260,7 +272,7 @@ export function ChessBoard() {
                     
                     {/* Piece */}
                     <div className="relative z-10">
-                      {getPieceSvg(piece, rankIndex, fileIndex)}
+                      {getPieceSvg(piece, displayRank, displayFile)}
                     </div>
                     
                     {/* Ban indicator overlay */}
@@ -284,6 +296,15 @@ export function ChessBoard() {
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
           New Game
+        </button>
+        <button
+          onClick={() => {
+            playSound(500, 50);
+            setFlipped(!flipped);
+          }}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+        >
+          Flip Board
         </button>
       </div>
 
