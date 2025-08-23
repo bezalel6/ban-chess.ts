@@ -89,7 +89,7 @@ export function ChessBoard() {
     setOriginalSvgs(cache);
   };
 
-  // Update SVGs when stroke width or piece scale changes
+  // Update SVGs when visual properties change
   useEffect(() => {
     if (Object.keys(originalSvgs).length > 0) {
       const updated: Record<string, string> = {};
@@ -101,6 +101,15 @@ export function ChessBoard() {
           /stroke-width="[^"]*"/g,
           `stroke-width="${strokeWidth}"`
         );
+        
+        // Update stroke color
+        modifiedSvg = modifiedSvg.replace(
+          /stroke="[^"]*"/g,
+          `stroke="${strokeColor}"`
+        );
+        
+        // We'll update fill colors dynamically per piece type
+        // For now, keep the original fill attribute
 
         // Handle piece scaling
         const viewBoxMatch = modifiedSvg.match(/viewBox="0 0 (\d+) (\d+)"/);
@@ -131,7 +140,7 @@ export function ChessBoard() {
       }
       setModifiedSvgs(updated);
     }
-  }, [strokeWidth, pieceScale, originalSvgs]);
+  }, [strokeWidth, pieceScale, strokeColor, whitePieceFill, blackPieceFill, originalSvgs]);
 
   // Update CSS variables when settings change
   useEffect(() => {
@@ -278,10 +287,14 @@ export function ChessBoard() {
     const pieceType = piece.toUpperCase();
 
     // Use modified SVG if available, otherwise fall back to original path
-    const svgContent = modifiedSvgs[pieceType];
+    let svgContent = modifiedSvgs[pieceType];
     let imageSrc = PIECE_SVGS[pieceType];
 
     if (svgContent) {
+      // Apply the appropriate fill color based on piece color
+      const fillColor = isWhite ? whitePieceFill : blackPieceFill;
+      svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${fillColor}"`);
+      
       // Convert SVG string to data URL
       const encodedSvg = encodeURIComponent(svgContent);
       imageSrc = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
@@ -445,6 +458,42 @@ export function ChessBoard() {
                   setPieceBrightness(parseFloat((e.target as any).value))
                 }
                 className="control-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                White Piece Fill Color
+              </label>
+              <input
+                type="color"
+                value={whitePieceFill}
+                onChange={(e) => setWhitePieceFill((e.target as any).value)}
+                className="control-color"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Black Piece Fill Color
+              </label>
+              <input
+                type="color"
+                value={blackPieceFill}
+                onChange={(e) => setBlackPieceFill((e.target as any).value)}
+                className="control-color"
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">
+                Stroke/Outline Color
+              </label>
+              <input
+                type="color"
+                value={strokeColor}
+                onChange={(e) => setStrokeColor((e.target as any).value)}
+                className="control-color"
               />
             </div>
           </div>
