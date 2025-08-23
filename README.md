@@ -330,102 +330,13 @@ console.log('PGN:', game.pgn());
 // Output: "1. {banning: e2e4} d4 {banning: e7e5} d6 2. {banning: g1f3} Bf4"
 ```
 
-### Tactical Ban Checkmate
-
-```typescript
-// Setup: Position where Black king will have only one escape from check
-const dangerousPos = new BanChess('rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1');
-
-// White moves: Bxf7+ (check!)
-dangerousPos.play({ move: { from: 'c4', to: 'f7' } });
-
-// Now it's White's turn to ban BEFORE Black's move
-// Black has only one legal move to escape check: Ke7
-const escapes = dangerousPos.legalBans();
-console.log('Black\'s only escape:', escapes); // [{ from: 'e8', to: 'e7' }]
-
-// White bans that escape move
-dangerousPos.play({ ban: { from: 'e8', to: 'e7' } });
-
-// Black's turn to move, but has NO legal moves (checkmate!)
-console.log('Game over:', dangerousPos.gameOver()); // true
-console.log('Checkmate:', dangerousPos.inCheckmate()); // true
-```
-
-### Promotion Ban Example
-
-```typescript
-// Position: White has pawn on a7, ready to promote
-const game = new BanChess('4k3/P7/8/8/8/8/8/4K3 b - - 0 1');
-
-// Black bans BEFORE White's move (preventing promotion)
-game.play({ ban: { from: 'a7', to: 'a8' } });
-
-// CRITICAL: This single ban blocks ALL promotions:
-// - a7a8=Q (promote to queen) - BANNED
-// - a7a8=R (promote to rook) - BANNED  
-// - a7a8=B (promote to bishop) - BANNED
-// - a7a8=N (promote to knight) - BANNED
-
-// White's turn to move, but cannot promote
-console.log(game.legalMoves()); // No a7-a8 moves available
-game.play({ move: { from: 'e1', to: 'e2' } }); // Must move king instead
-```
-
-### Defensive Ban Strategy
-
-```typescript
-const game = new BanChess();
-
-// Opening: Using bans to control development
-
-// Black bans Nf3 BEFORE White's opening move
-game.play({ ban: { from: 'g1', to: 'f3' } });
-game.play({ move: { from: 'e2', to: 'e4' } });   // White opens e4 (Nf3 banned)
-
-// White bans Nc6 BEFORE Black's response
-game.play({ ban: { from: 'b8', to: 'c6' } });
-game.play({ move: { from: 'e7', to: 'e5' } });   // Black plays e5 (Nc6 banned)
-
-// Black bans Bc4 BEFORE White's next move
-game.play({ ban: { from: 'f1', to: 'c4' } });
-game.play({ move: { from: 'd2', to: 'd3' } });   // White plays d3 (Bc4 banned)
-
-// The pattern: Each ban shapes the opponent's immediate next move
-```
-
-
 
 
 
 ## Compatibility
 
-### chess.ts Compatibility
-
-ban-chess.ts maintains full compatibility with chess.ts:
-
-```typescript
-// All chess.ts methods work unchanged
-const game = new BanChess();
-
-// Standard chess.ts API
-game.turn;           // 'white' | 'black'
-game.inCheck();      // boolean
-game.fen();          // FEN string
-game.pgn();          // PGN string
-game.history();      // Move history
-
-// Plus Ban Chess extensions  
-game.phase;          // 'banning' | 'moving'
-game.banningPlayer;  // 'white' | 'black' | null
-game.banMove();      // Ban move method
-game.legalBans();    // Available bans
-```
-
-### Version Support
-
-- Node.js: 14.x, 16.x, 18.x, 20.x
-- TypeScript: 4.5+, 5.x  
+- Node.js: 14+
+- TypeScript: 4.5+
 - chess.ts: 0.16.x
 - Browsers: Modern ES2020+ support
 
