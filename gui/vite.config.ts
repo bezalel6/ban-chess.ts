@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [preact()],
   base: '/ban-chess.ts/',
   css: {
-    postcss: './postcss.config.js'
+    postcss: './postcss.config.cjs'
   }
 })
