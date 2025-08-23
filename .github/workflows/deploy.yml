@@ -44,7 +44,7 @@ jobs:
         
       - name: Build GUI
         working-directory: ./gui
-        run: npm run build
+        run: NODE_ENV=production npm run build
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
