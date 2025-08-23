@@ -206,8 +206,7 @@ Ban Chess extends standard FEN notation with a 7th field to track ban state:
 Ban state field format:
 - `b:[from][to]` - Active ban (e.g., `b:e2e4` means e2-e4 is banned)
 - `w:ban` - White's turn to ban
-- `b:ban` - Black's turn to ban  
-- `-` - No active ban (normal move expected)
+- `b:ban` - Black's turn to ban
 
 Examples:
 ```typescript
