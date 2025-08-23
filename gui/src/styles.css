@@ -153,21 +153,45 @@ body {
 }
 
 .square-selected {
-  box-shadow: inset 0 0 0 4px #22d3ee;
+  position: relative;
   z-index: 10;
   transform: scale(1.05);
 }
 
-.square-legal-move {
-  box-shadow: inset 0 0 0 4px #34d399;
+.square-selected::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 4px solid #22d3ee;
+  pointer-events: none;
+}
+
+.square-legal-move::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 4px solid #34d399;
+  pointer-events: none;
 }
 
 .square-last-move {
-  background-color: #fbbf24;
+  position: relative;
 }
 
-.square-legal-ban {
-  box-shadow: inset 0 0 0 4px #dc2626;
+.square-last-move::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(251, 191, 36, 0.3);
+  pointer-events: none;
+}
+
+.square-legal-ban::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 4px solid #dc2626;
+  pointer-events: none;
 }
 
 /* Chess Pieces */
