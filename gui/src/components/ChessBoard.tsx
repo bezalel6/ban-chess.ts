@@ -41,6 +41,7 @@ export function ChessBoard() {
   const [game] = useState(() => new BanChess());
   const [board, setBoard] = useState<(string | null)[][]>([]);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [selectedBan, setSelectedBan] = useState<Move | null>(null);
   const [legalMoves, setLegalMoves] = useState<Move[]>([]);
   const [legalBans, setLegalBans] = useState<Move[]>([]);
   const [lastMove, setLastMove] = useState<{from: string, to: string} | null>(null);
@@ -93,24 +94,24 @@ export function ChessBoard() {
     const square = getSquareNotation(displayRank, displayFile);
     
     if (game.nextActionType() === 'ban') {
-      const banMove = legalBans.find(ban => ban.from === square || ban.to === square);
-      if (banMove) {
-        const selected = legalBans.find(ban => 
-          (ban.from === selectedSquare && ban.to === square) ||
-          (ban.to === selectedSquare && ban.from === square)
-        );
-        
-        if (selected) {
-          game.play({ ban: selected });
+      // Find all bans involving this square
+      const bansForSquare = legalBans.filter(ban => ban.from === square || ban.to === square);
+      
+      if (bansForSquare.length > 0) {
+        // If we already have this ban selected, execute it
+        if (selectedBan && (selectedBan.from === square || selectedBan.to === square)) {
+          game.play({ ban: selectedBan });
           playSound(300, 150);
-          setMoveHistory([...moveHistory, `🚫 ${selected.from}→${selected.to}`]);
+          setMoveHistory([...moveHistory, `🚫 ${selectedBan.from}→${selectedBan.to}`]);
           updateBoard();
-          setSelectedSquare(null);
+          setSelectedBan(null);
         } else {
-          setSelectedSquare(square);
+          // Select the first ban involving this square
+          // In ban chess, each move can only be banned once, so this works
+          setSelectedBan(bansForSquare[0]);
         }
       } else {
-        setSelectedSquare(null);
+        setSelectedBan(null);
       }
     } else {
       if (selectedSquare) {
@@ -122,6 +123,7 @@ export function ChessBoard() {
           setLastMove({ from: move.from, to: move.to });
           updateBoard();
           setSelectedSquare(null);
+          setSelectedBan(null);
         } else {
           const pieceAtSquare = board[displayRank]?.[displayFile];
           if (pieceAtSquare && legalMoves.some(m => m.from === square)) {
@@ -152,6 +154,7 @@ export function ChessBoard() {
   const resetGame = () => {
     game.reset();
     setSelectedSquare(null);
+    setSelectedBan(null);
     setLastMove(null);
     setMoveHistory([]);
     updateBoard();
@@ -240,18 +243,18 @@ export function ChessBoard() {
                 const square = getSquareNotation(displayRank, displayFile);
                 const piece = getPieceAtSquare(displayRank, displayFile);
                 const isSelected = selectedSquare === square;
-                const isLegal = legalMoves.some(m => 
-                  selectedSquare === m.from && square === m.to
-                );
+                const isLegalMove = game.nextActionType() === 'move' && 
+                  selectedSquare && 
+                  legalMoves.some(m => selectedSquare === m.from && square === m.to);
                 const isLastMove = lastMove && (
                   lastMove.from === square || lastMove.to === square
                 );
-                const isLegalBan = game.nextActionType() === 'ban' && 
-                  selectedSquare &&
-                  legalBans.some(ban => 
-                    (selectedSquare === ban.from && square === ban.to) ||
-                    (selectedSquare === ban.to && square === ban.from)
-                  );
+                // For bans: show all bannable moves, highlight selected ban
+                const isBannable = game.nextActionType() === 'ban' && 
+                  legalBans.some(ban => ban.from === square || ban.to === square);
+                
+                const isSelectedBan = selectedBan && 
+                  (selectedBan.from === square || selectedBan.to === square);
 
                 return (
                   <div
@@ -259,10 +262,14 @@ export function ChessBoard() {
                     onClick={() => handleSquareClick(displayRank, displayFile)}
                     className={`board-square ${getSquareColor(displayRank, displayFile)} ${
                       isSelected ? 'square-selected' : ''
-                    } ${isLegal ? 'square-legal-move' : ''} ${
+                    } ${isLegalMove ? 'square-legal-move' : ''} ${
                       isLastMove ? 'square-last-move' : ''
-                    } ${isLegalBan ? 'square-legal-ban' : ''}`}>
+                    } ${isBannable ? 'square-bannable' : ''} ${
+                      isSelectedBan ? 'square-selected-ban' : ''
+                    }`}>
                     {piece && renderPiece(piece)}
+                    {isLegalMove && <div className="move-dot" />}
+                    {isSelectedBan && <div className="ban-x">×</div>}
                   </div>
                 );
               })

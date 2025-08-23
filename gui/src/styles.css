@@ -155,23 +155,62 @@ body {
 .square-selected {
   position: relative;
   z-index: 10;
-  transform: scale(1.05);
-  box-shadow: 0 0 0 4px #22d3ee inset;
+  box-shadow: 0 0 0 3px #22d3ee inset;
 }
 
 .square-legal-move {
   position: relative;
-  box-shadow: 0 0 0 4px #34d399 inset;
 }
 
 .square-last-move {
   position: relative;
-  background-image: linear-gradient(rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.3));
+  background-image: linear-gradient(rgba(251, 191, 36, 0.25), rgba(251, 191, 36, 0.25));
 }
 
-.square-legal-ban {
+.square-bannable {
   position: relative;
-  box-shadow: 0 0 0 4px #dc2626 inset;
+  cursor: pointer;
+}
+
+.square-bannable:hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(220, 38, 38, 0.15);
+  pointer-events: none;
+}
+
+.square-selected-ban {
+  position: relative;
+}
+
+/* Move indicator dot */
+.move-dot {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  background-color: rgba(52, 211, 153, 0.8);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Ban X indicator */
+.ban-x {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+  font-size: 3rem;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 15;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Chess Pieces */
