@@ -1,35 +1,39 @@
-import { useState, useEffect } from 'preact/hooks';
-import { BanChess } from 'ban-chess.ts';
-import type { Move } from 'ban-chess.ts';
+import { useState, useEffect } from "preact/hooks";
+import { BanChess } from "ban-chess.ts";
+import type { Move } from "ban-chess.ts";
 
 const BASE_PATH = import.meta.env.BASE_URL;
 const PIECE_SVGS: Record<string, string> = {
-  'K': `${BASE_PATH}chess-king.svg`,
-  'Q': `${BASE_PATH}chess-queen.svg`, 
-  'R': `${BASE_PATH}chess-rook.svg`,
-  'B': `${BASE_PATH}chess-bishop.svg`,
-  'N': `${BASE_PATH}chess-knight.svg`,
-  'P': `${BASE_PATH}chess-pawn.svg`
+  K: `${BASE_PATH}chess-king.svg`,
+  Q: `${BASE_PATH}chess-queen.svg`,
+  R: `${BASE_PATH}chess-rook.svg`,
+  B: `${BASE_PATH}chess-bishop.svg`,
+  N: `${BASE_PATH}chess-knight.svg`,
+  P: `${BASE_PATH}chess-pawn.svg`,
 };
 
-const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
 // Simple audio using Web Audio API
 function playSound(frequency: number, duration: number = 100) {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     oscillator.frequency.value = frequency;
-    oscillator.type = 'sine';
-    
+    oscillator.type = "sine";
+
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-    
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + duration / 1000
+    );
+
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + duration / 1000);
   } catch (e) {
@@ -43,12 +47,14 @@ export function ChessBoard() {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [legalMoves, setLegalMoves] = useState<Move[]>([]);
   const [legalBans, setLegalBans] = useState<Move[]>([]);
-  const [lastMove, setLastMove] = useState<{from: string, to: string} | null>(null);
+  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(
+    null
+  );
   const [flipped, setFlipped] = useState(false);
   const [autoFlip, setAutoFlip] = useState(true);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [, forceUpdate] = useState({});
-  
+
   // Visual customization states
   const [boardSize, setBoardSize] = useState(4);
   const [strokeWidth, setStrokeWidth] = useState(16);
@@ -56,6 +62,9 @@ export function ChessBoard() {
   const [strokeOpacity, setStrokeOpacity] = useState(1);
   const [pieceContrast, setPieceContrast] = useState(1);
   const [pieceBrightness, setPieceBrightness] = useState(1);
+  const [whitePieceFill, setWhitePieceFill] = useState("#ffffff");
+  const [blackPieceFill, setBlackPieceFill] = useState("#000000");
+  const [strokeColor, setStrokeColor] = useState("#000000");
   const [showControls, setShowControls] = useState(true);
   const [originalSvgs, setOriginalSvgs] = useState<Record<string, string>>({});
   const [modifiedSvgs, setModifiedSvgs] = useState<Record<string, string>>({});
@@ -86,10 +95,13 @@ export function ChessBoard() {
       const updated: Record<string, string> = {};
       for (const [piece, originalSvg] of Object.entries(originalSvgs)) {
         let modifiedSvg = originalSvg;
-        
+
         // Update stroke-width
-        modifiedSvg = modifiedSvg.replace(/stroke-width="[^"]*"/g, `stroke-width="${strokeWidth}"`);
-        
+        modifiedSvg = modifiedSvg.replace(
+          /stroke-width="[^"]*"/g,
+          `stroke-width="${strokeWidth}"`
+        );
+
         // Handle piece scaling
         const viewBoxMatch = modifiedSvg.match(/viewBox="0 0 (\d+) (\d+)"/);
         if (viewBoxMatch) {
@@ -97,20 +109,24 @@ export function ChessBoard() {
           const height = parseInt(viewBoxMatch[2]);
           const centerX = width / 2;
           const centerY = height / 2;
-          
+
           // Apply transform to the group containing the path
-          const transformValue = pieceScale !== 1 
-            ? `transform="translate(${centerX}, ${centerY}) scale(${pieceScale}) translate(-${centerX}, -${centerY})"` 
-            : '';
-          
+          const transformValue =
+            pieceScale !== 1
+              ? `transform="translate(${centerX}, ${centerY}) scale(${pieceScale}) translate(-${centerX}, -${centerY})"`
+              : "";
+
           // Update existing group transform or add it if not present
-          if (modifiedSvg.includes('<g>')) {
-            modifiedSvg = modifiedSvg.replace(/<g[^>]*>/, `<g ${transformValue}>`);
-          } else if (modifiedSvg.includes('<g ')) {
+          if (modifiedSvg.includes("<g>")) {
+            modifiedSvg = modifiedSvg.replace(
+              /<g[^>]*>/,
+              `<g ${transformValue}>`
+            );
+          } else if (modifiedSvg.includes("<g ")) {
             modifiedSvg = modifiedSvg.replace(/<g /, `<g ${transformValue} `);
           }
         }
-        
+
         updated[piece] = modifiedSvg;
       }
       setModifiedSvgs(updated);
@@ -120,16 +136,16 @@ export function ChessBoard() {
   // Update CSS variables when settings change
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty('--board-size', `${boardSize}rem`);
-    root.style.setProperty('--stroke-opacity', `${strokeOpacity}`);
-    root.style.setProperty('--piece-contrast', `${pieceContrast}`);
-    root.style.setProperty('--piece-brightness', `${pieceBrightness}`);
+    root.style.setProperty("--board-size", `${boardSize}rem`);
+    root.style.setProperty("--stroke-opacity", `${strokeOpacity}`);
+    root.style.setProperty("--piece-contrast", `${pieceContrast}`);
+    root.style.setProperty("--piece-brightness", `${pieceBrightness}`);
   }, [boardSize, strokeOpacity, pieceContrast, pieceBrightness]);
 
   const updateBoard = () => {
-    const fen = game.fen().split(' ')[0];
-    const rows = fen.split('/');
-    const parsedRows = rows.map(row => {
+    const fen = game.fen().split(" ")[0];
+    const rows = fen.split("/");
+    const parsedRows = rows.map((row) => {
       const squares = [];
       for (const char of row) {
         if (isNaN(parseInt(char))) {
@@ -149,7 +165,7 @@ export function ChessBoard() {
 
   const getSquareColor = (rank: number, file: number) => {
     const isLight = (rank + file) % 2 === 0;
-    return isLight ? 'square-light' : 'square-dark';
+    return isLight ? "square-light" : "square-dark";
   };
 
   const getSquareNotation = (displayRank: number, displayFile: number) => {
@@ -164,27 +180,31 @@ export function ChessBoard() {
 
   const isLegalTarget = (square: string) => {
     if (!selectedSquare) return false;
-    if (game.nextActionType() === 'move') {
-      return legalMoves.some(m => m.from === selectedSquare && m.to === square);
+    if (game.nextActionType() === "move") {
+      return legalMoves.some(
+        (m) => m.from === selectedSquare && m.to === square
+      );
     } else {
-      return legalBans.some(b => b.from === selectedSquare && b.to === square);
+      return legalBans.some(
+        (b) => b.from === selectedSquare && b.to === square
+      );
     }
   };
 
   const canSelectSquare = (square: string) => {
-    if (game.nextActionType() === 'move') {
-      return legalMoves.some(m => m.from === square);
+    if (game.nextActionType() === "move") {
+      return legalMoves.some((m) => m.from === square);
     } else {
-      return legalBans.some(b => b.from === square);
+      return legalBans.some((b) => b.from === square);
     }
   };
 
   const handleSquareClick = (displayRank: number, displayFile: number) => {
     const square = getSquareNotation(displayRank, displayFile);
-    
+
     // Play click sound
     playSound(600, 50);
-    
+
     if (!selectedSquare) {
       if (canSelectSquare(square)) {
         setSelectedSquare(square);
@@ -198,30 +218,31 @@ export function ChessBoard() {
     }
 
     if (isLegalTarget(square)) {
-      const action = game.nextActionType() === 'move' 
-        ? { move: { from: selectedSquare, to: square } }
-        : { ban: { from: selectedSquare, to: square } };
-      
+      const action =
+        game.nextActionType() === "move"
+          ? { move: { from: selectedSquare, to: square } }
+          : { ban: { from: selectedSquare, to: square } };
+
       const result = game.play(action);
       if (result.success) {
         // Play different sounds for move vs ban
-        if (game.nextActionType() === 'ban') {
+        if (game.nextActionType() === "ban") {
           playSound(800, 150); // Higher pitch for move
         } else {
           playSound(400, 200); // Lower pitch for ban
         }
-        
-        if (game.nextActionType() === 'move') {
+
+        if (game.nextActionType() === "move") {
           setMoveHistory([...moveHistory, `🚫 ${selectedSquare}→${square}`]);
         } else {
           setMoveHistory([...moveHistory, `${selectedSquare}→${square}`]);
         }
-        
+
         setLastMove({ from: selectedSquare, to: square });
         updateBoard();
         setSelectedSquare(null);
         forceUpdate({});
-        
+
         // Check for game over
         if (game.gameOver()) {
           setTimeout(() => {
@@ -255,30 +276,30 @@ export function ChessBoard() {
   const renderPiece = (piece: string) => {
     const isWhite = piece === piece.toUpperCase();
     const pieceType = piece.toUpperCase();
-    
+
     // Use modified SVG if available, otherwise fall back to original path
     const svgContent = modifiedSvgs[pieceType];
     let imageSrc = PIECE_SVGS[pieceType];
-    
+
     if (svgContent) {
       // Convert SVG string to data URL
       const encodedSvg = encodeURIComponent(svgContent);
       imageSrc = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
     }
-    
+
     if (!imageSrc) return null;
-    
+
     return (
-      <div 
+      <div
         className="piece-wrapper"
         style={{
-          opacity: strokeOpacity
+          opacity: strokeOpacity,
         }}
       >
-        <img 
+        <img
           src={imageSrc}
           alt={piece}
-          className={`chess-piece ${isWhite ? 'piece-white' : 'piece-black'}`}
+          className={`chess-piece ${isWhite ? "piece-white" : "piece-black"}`}
         />
       </div>
     );
@@ -286,7 +307,7 @@ export function ChessBoard() {
 
   useEffect(() => {
     if (autoFlip) {
-      const shouldFlip = game.turn === 'black';
+      const shouldFlip = game.turn === "black";
       if (shouldFlip !== flipped) {
         setFlipped(shouldFlip);
       }
@@ -298,11 +319,17 @@ export function ChessBoard() {
       {/* Header */}
       <div className="page-header">
         <div className="header-content">
-          <img src={`${BASE_PATH}logo.png`} alt="Ban Chess Logo" className="header-logo" />
+          <img
+            src={`${BASE_PATH}logo.png`}
+            alt="Ban Chess Logo"
+            className="header-logo"
+          />
           <div className="header-text">
             <h1 className="page-title">Ban Chess</h1>
             <p className="subtitle">
-              {game.gameOver() ? 'Game Over' : 'Click on a piece to select, then click destination'}
+              {game.gameOver()
+                ? "Game Over"
+                : "Click on a piece to select, then click destination"}
             </p>
           </div>
         </div>
@@ -310,13 +337,13 @@ export function ChessBoard() {
 
       {/* Visual Controls */}
       <div className="controls-section">
-        <button 
+        <button
           className="btn btn-secondary controls-toggle"
           onClick={() => setShowControls(!showControls)}
         >
-          {showControls ? '🎨 Hide Controls' : '🎨 Show Controls'}
+          {showControls ? "🎨 Hide Controls" : "🎨 Show Controls"}
         </button>
-        
+
         {showControls && (
           <div className="controls-panel">
             <div className="control-group">
@@ -329,7 +356,9 @@ export function ChessBoard() {
                 max="8"
                 step="0.5"
                 value={boardSize}
-                onChange={(e) => setBoardSize(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setBoardSize(parseFloat((e.target as any).value))
+                }
                 className="control-slider"
               />
             </div>
@@ -344,7 +373,9 @@ export function ChessBoard() {
                 max="32"
                 step="2"
                 value={strokeWidth}
-                onChange={(e) => setStrokeWidth(parseInt(e.target.value))}
+                onChange={(e) =>
+                  setStrokeWidth(parseInt((e.target as any).value))
+                }
                 className="control-slider"
               />
             </div>
@@ -359,7 +390,9 @@ export function ChessBoard() {
                 max="1.3"
                 step="0.05"
                 value={pieceScale}
-                onChange={(e) => setPieceScale(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setPieceScale(parseFloat((e.target as any).value))
+                }
                 className="control-slider"
               />
             </div>
@@ -374,7 +407,9 @@ export function ChessBoard() {
                 max="1"
                 step="0.1"
                 value={strokeOpacity}
-                onChange={(e) => setStrokeOpacity(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setStrokeOpacity(parseFloat((e.target as any).value))
+                }
                 className="control-slider"
               />
             </div>
@@ -389,7 +424,9 @@ export function ChessBoard() {
                 max="2"
                 step="0.1"
                 value={pieceContrast}
-                onChange={(e) => setPieceContrast(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setPieceContrast(parseFloat((e.target as any).value))
+                }
                 className="control-slider"
               />
             </div>
@@ -404,7 +441,9 @@ export function ChessBoard() {
                 max="1.5"
                 step="0.1"
                 value={pieceBrightness}
-                onChange={(e) => setPieceBrightness(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setPieceBrightness(parseFloat((e.target as any).value))
+                }
                 className="control-slider"
               />
             </div>
@@ -415,14 +454,23 @@ export function ChessBoard() {
       {/* Game Info */}
       <div className="game-info">
         <div className="turn-indicator">
-          <span className={game.turn === 'white' ? 'white-turn' : 'black-turn'}>
-            Turn: {game.turn === 'white' ? 'White' : 'Black'}
+          <span className={game.turn === "white" ? "white-turn" : "black-turn"}>
+            Turn: {game.turn === "white" ? "White" : "Black"}
           </span>
-          <span className={`dot ${game.turn === 'white' ? 'dot-white' : 'dot-black'}`} />
+          <span
+            className={`dot ${
+              game.turn === "white" ? "dot-white" : "dot-black"
+            }`}
+          />
         </div>
 
-        <div className={`action-type ${game.nextActionType() === 'ban' ? 'ban' : 'move'}`}>
-          Next: {game.nextActionType() === 'ban' ? '🚫 Ban a move' : '♟️ Make a move'}
+        <div
+          className={`action-type ${
+            game.nextActionType() === "ban" ? "ban" : "move"
+          }`}
+        >
+          Next:{" "}
+          {game.nextActionType() === "ban" ? "🚫 Ban a move" : "♟️ Make a move"}
         </div>
 
         {game.inCheckmate() && (
@@ -438,7 +486,7 @@ export function ChessBoard() {
         <div className="board-wrapper">
           {/* Rank labels (1-8) */}
           <div className="rank-labels">
-            {Array.from({length: 8}, (_, i) => {
+            {Array.from({ length: 8 }, (_, i) => {
               const rank = flipped ? i + 1 : 8 - i;
               return <div key={i}>{rank}</div>;
             })}
@@ -446,7 +494,7 @@ export function ChessBoard() {
 
           {/* File labels (a-h) */}
           <div className="file-labels">
-            {Array.from({length: 8}, (_, i) => {
+            {Array.from({ length: 8 }, (_, i) => {
               const file = flipped ? FILES[7 - i] : FILES[i];
               return <div key={i}>{file}</div>;
             })}
@@ -454,14 +502,16 @@ export function ChessBoard() {
 
           {/* Chess board grid */}
           <div className="chess-board">
-            {[0,1,2,3,4,5,6,7].map(displayRank => 
-              [0,1,2,3,4,5,6,7].map(displayFile => {
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((displayRank) =>
+              [0, 1, 2, 3, 4, 5, 6, 7].map((displayFile) => {
                 const square = getSquareNotation(displayRank, displayFile);
                 const piece = getPieceAtSquare(displayRank, displayFile);
                 const isSelected = square === selectedSquare;
                 const isLegal = selectedSquare && isLegalTarget(square);
-                const isBanned = game.currentBannedMove && 
-                  (game.currentBannedMove.from === square || game.currentBannedMove.to === square);
+                const isBanned =
+                  game.currentBannedMove &&
+                  (game.currentBannedMove.from === square ||
+                    game.currentBannedMove.to === square);
                 const isLastMoveFrom = lastMove?.from === square;
                 const isLastMoveTo = lastMove?.to === square;
                 const canSelect = canSelectSquare(square);
@@ -470,15 +520,21 @@ export function ChessBoard() {
                   <div
                     key={`${displayRank}-${displayFile}`}
                     onClick={() => handleSquareClick(displayRank, displayFile)}
-                    className={`board-square ${getSquareColor(displayRank, displayFile)} ${
-                      isSelected ? 'square-selected' : ''
-                    } ${isLegal ? 'square-legal-move' : ''} ${
-                      isLastMoveFrom ? 'square-last-move-from' : ''
-                    } ${isLastMoveTo ? 'square-last-move-to' : ''} ${
-                      isBanned ? 'square-banned' : ''
-                    } ${canSelect && !isSelected ? 'square-can-select' : ''} ${
-                      !canSelect && !isLegal && selectedSquare ? 'square-inactive' : ''
-                    }`}>
+                    className={`board-square ${getSquareColor(
+                      displayRank,
+                      displayFile
+                    )} ${isSelected ? "square-selected" : ""} ${
+                      isLegal ? "square-legal-move" : ""
+                    } ${isLastMoveFrom ? "square-last-move-from" : ""} ${
+                      isLastMoveTo ? "square-last-move-to" : ""
+                    } ${isBanned ? "square-banned" : ""} ${
+                      canSelect && !isSelected ? "square-can-select" : ""
+                    } ${
+                      !canSelect && !isLegal && selectedSquare
+                        ? "square-inactive"
+                        : ""
+                    }`}
+                  >
                     {piece && renderPiece(piece)}
                     {isLegal && !piece && <div className="move-dot" />}
                     {isBanned && (
@@ -496,12 +552,17 @@ export function ChessBoard() {
 
       {/* Controls */}
       <div className="controls">
-        <button onClick={resetGame} className="btn btn-primary">New Game</button>
-        <button onClick={() => setFlipped(!flipped)} className="btn">Flip Board</button>
-        <button 
-          onClick={() => setAutoFlip(!autoFlip)} 
-          className={`btn ${autoFlip ? 'btn-success' : ''}`}>
-          Auto-flip: {autoFlip ? 'ON' : 'OFF'}
+        <button onClick={resetGame} className="btn btn-primary">
+          New Game
+        </button>
+        <button onClick={() => setFlipped(!flipped)} className="btn">
+          Flip Board
+        </button>
+        <button
+          onClick={() => setAutoFlip(!autoFlip)}
+          className={`btn ${autoFlip ? "btn-success" : ""}`}
+        >
+          Auto-flip: {autoFlip ? "ON" : "OFF"}
         </button>
       </div>
 
@@ -511,7 +572,12 @@ export function ChessBoard() {
         <div className="move-history">
           {moveHistory.length > 0 ? (
             moveHistory.map((entry, i) => (
-              <div key={i} className={`move-entry ${entry.startsWith('🚫') ? 'ban-entry' : ''}`}>
+              <div
+                key={i}
+                className={`move-entry ${
+                  entry.startsWith("🚫") ? "ban-entry" : ""
+                }`}
+              >
                 {i + 1}. {entry}
               </div>
             ))
@@ -526,10 +592,9 @@ export function ChessBoard() {
         <div className="game-over">
           <h2>Game Over!</h2>
           <p>
-            {game.inCheckmate() 
-              ? `Checkmate! ${game.turn === 'white' ? 'Black' : 'White'} wins!`
-              : 'Draw!'
-            }
+            {game.inCheckmate()
+              ? `Checkmate! ${game.turn === "white" ? "Black" : "White"} wins!`
+              : "Draw!"}
           </p>
         </div>
       )}
