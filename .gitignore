@@ -34,9 +34,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Package manager files
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Lock files are needed for CI/CD - don't ignore them
+# yarn.lock
+# pnpm-lock.yaml
 
 # Claude configuration
 CLAUDE.md
