@@ -12,7 +12,7 @@ const PIECE_SVGS: Record<string, string> = {
 };
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
+const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];  // FEN order: rank 8 first
 
 // Simple audio using Web Audio API
 function playSound(frequency: number, duration: number = 100) {
@@ -50,7 +50,9 @@ export function ChessBoard() {
   const updateBoard = () => {
     const fen = game.fen().split(' ')[0];
     const rows = fen.split('/');
-    const newBoard = rows.map(row => {
+    // FEN starts from rank 8 (index 0) to rank 1 (index 7)
+    // Parse each row
+    const parsedRows = rows.map(row => {
       const squares = [];
       for (const char of row) {
         if (isNaN(parseInt(char))) {
@@ -63,6 +65,8 @@ export function ChessBoard() {
       }
       return squares;
     });
+    // Now reverse the array so rank 1 is at the bottom (index 7) for display
+    const newBoard = parsedRows.reverse();
     setBoard(newBoard);
     setLegalMoves(game.legalMoves());
     setLegalBans(game.legalBans());
@@ -74,17 +78,34 @@ export function ChessBoard() {
   };
 
   const getSquareNotation = (displayRank: number, displayFile: number) => {
-    // Convert display coordinates to actual board coordinates
-    const actualRank = flipped ? 7 - displayRank : displayRank;
-    const actualFile = flipped ? 7 - displayFile : displayFile;
-    return FILES[actualFile] + RANKS[actualRank];
+    // Board array NOW: index 0 = rank 1, index 7 = rank 8 (reversed from FEN)
+    // Display row 0 = top of screen, row 7 = bottom of screen
+    
+    if (!flipped) {
+      // Normal view: white at bottom
+      // Display row 0 (top) = rank 8, Display row 7 (bottom) = rank 1
+      const rank = 8 - displayRank;  // 0->8, 1->7, ..., 7->1
+      return FILES[displayFile] + rank;
+    } else {
+      // Flipped view: black at bottom
+      // Display row 0 (top) = rank 1, Display row 7 (bottom) = rank 8
+      const rank = displayRank + 1;  // 0->1, 1->2, ..., 7->8
+      return FILES[7 - displayFile] + rank;
+    }
   };
   
   const getBoardSquare = (displayRank: number, displayFile: number) => {
-    // Get the actual piece at this display position
-    const actualRank = flipped ? 7 - displayRank : displayRank;
-    const actualFile = flipped ? 7 - displayFile : displayFile;
-    return board[actualRank]?.[actualFile] || null;
+    // Board array NOW: index 0 = rank 1, index 7 = rank 8 (we reversed it)
+    
+    if (!flipped) {
+      // Normal view: Display row 0 shows rank 8 (board[7])
+      // Display row 7 shows rank 1 (board[0])
+      return board[7 - displayRank]?.[displayFile] || null;
+    } else {
+      // Flipped view: Display row 0 shows rank 1 (board[0])
+      // Display row 7 shows rank 8 (board[7])
+      return board[displayRank]?.[7 - displayFile] || null;
+    }
   };
 
   const isLegalTarget = (square: string) => {
@@ -221,7 +242,7 @@ export function ChessBoard() {
           ))}
         </div>
         <div className="absolute -left-6 top-0 bottom-0 flex flex-col justify-around py-6">
-          {(flipped ? [...RANKS].reverse() : RANKS).map(rank => (
+          {(flipped ? ['1', '2', '3', '4', '5', '6', '7', '8'] : ['8', '7', '6', '5', '4', '3', '2', '1']).map(rank => (
             <div key={rank} className="text-xs font-bold text-gray-600">{rank}</div>
           ))}
         </div>
