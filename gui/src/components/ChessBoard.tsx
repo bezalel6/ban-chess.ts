@@ -2,13 +2,14 @@ import { useState, useEffect } from 'preact/hooks';
 import { BanChess } from 'ban-chess.ts';
 import type { Move } from 'ban-chess.ts';
 
+const BASE_PATH = import.meta.env.BASE_URL;
 const PIECE_SVGS: Record<string, string> = {
-  'K': '/chess-king.svg',
-  'Q': '/chess-queen.svg', 
-  'R': '/chess-rook.svg',
-  'B': '/chess-bishop.svg',
-  'N': '/chess-knight.svg',
-  'P': '/chess-pawn.svg'
+  'K': `${BASE_PATH}chess-king.svg`,
+  'Q': `${BASE_PATH}chess-queen.svg`, 
+  'R': `${BASE_PATH}chess-rook.svg`,
+  'B': `${BASE_PATH}chess-bishop.svg`,
+  'N': `${BASE_PATH}chess-knight.svg`,
+  'P': `${BASE_PATH}chess-pawn.svg`
 };
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
