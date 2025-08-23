@@ -1,0 +1,1 @@
+- Do not include 'tips' or 'strategy'. do not attempt to give this a sense of credibility. do not include integration examples. not in the readme and not in the codebase.
