@@ -65,9 +65,8 @@ export function ChessBoard() {
       }
       return squares;
     });
-    // Now reverse the array so rank 1 is at the bottom (index 7) for display
-    const newBoard = parsedRows.reverse();
-    setBoard(newBoard);
+    // Keep FEN order: index 0 = rank 8 (black's back rank), index 7 = rank 1 (white's back rank)
+    setBoard(parsedRows);
     setLegalMoves(game.legalMoves());
     setLegalBans(game.legalBans());
   };
@@ -78,7 +77,6 @@ export function ChessBoard() {
   };
 
   const getSquareNotation = (displayRank: number, displayFile: number) => {
-    // Board array NOW: index 0 = rank 1, index 7 = rank 8 (reversed from FEN)
     // Display row 0 = top of screen, row 7 = bottom of screen
     
     if (!flipped) {
@@ -95,16 +93,19 @@ export function ChessBoard() {
   };
   
   const getBoardSquare = (displayRank: number, displayFile: number) => {
-    // Board array NOW: index 0 = rank 1, index 7 = rank 8 (we reversed it)
+    // Board array: index 0 = rank 8 (black's back rank), index 7 = rank 1 (white's back rank)
+    // Display: row 0 = top of screen, row 7 = bottom of screen
     
     if (!flipped) {
-      // Normal view: Display row 0 shows rank 8 (board[7])
-      // Display row 7 shows rank 1 (board[0])
-      return board[7 - displayRank]?.[displayFile] || null;
+      // Normal view: white at bottom
+      // Display row 0 (top) should show rank 8 (board[0])
+      // Display row 7 (bottom) should show rank 1 (board[7])
+      return board[displayRank]?.[displayFile] || null;
     } else {
-      // Flipped view: Display row 0 shows rank 1 (board[0])
-      // Display row 7 shows rank 8 (board[7])
-      return board[displayRank]?.[7 - displayFile] || null;
+      // Flipped view: black at bottom  
+      // Display row 0 (top) should show rank 1 (board[7])
+      // Display row 7 (bottom) should show rank 8 (board[0])
+      return board[7 - displayRank]?.[7 - displayFile] || null;
     }
   };
 
@@ -196,11 +197,9 @@ export function ChessBoard() {
       <img 
         src={svgPath}
         alt={piece}
-        className={`w-10 h-10 md:w-12 md:h-12 select-none pointer-events-none ${
-          isWhite ? 'filter brightness-100' : 'filter brightness-0'
-        }`}
+        className={`w-10 h-10 md:w-12 md:h-12 select-none pointer-events-none`}
         style={{
-          filter: isWhite ? 'none' : 'invert(1)'
+          filter: isWhite ? 'invert(1)' : 'none'
         }}
       />
     );
