@@ -26,6 +26,24 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.header-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.header-text {
+  text-align: left;
+}
+
 .page-title {
   font-size: 2.25rem;
   font-weight: 700;
@@ -235,11 +253,11 @@ body {
 }
 
 .piece-white {
-  filter: invert(1) drop-shadow(1px 0 0 rgba(0,0,0,0.4)) drop-shadow(0 1px 0 rgba(0,0,0,0.4));
+  filter: none;
 }
 
 .piece-black {
-  filter: drop-shadow(1px 0 0 rgba(255,255,255,0.4)) drop-shadow(0 1px 0 rgba(255,255,255,0.4));
+  filter: invert(1);
 }
 
 /* Board Labels */

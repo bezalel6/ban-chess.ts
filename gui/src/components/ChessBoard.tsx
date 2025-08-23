@@ -208,10 +208,15 @@ export function ChessBoard() {
     <div className="container">
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">Ban Chess</h1>
-        <p className="subtitle">
-          {game.gameOver() ? 'Game Over' : 'Click on a piece to select, then click destination'}
-        </p>
+        <div className="header-content">
+          <img src={`${BASE_PATH}logo.png`} alt="Ban Chess Logo" className="header-logo" />
+          <div className="header-text">
+            <h1 className="page-title">Ban Chess</h1>
+            <p className="subtitle">
+              {game.gameOver() ? 'Game Over' : 'Click on a piece to select, then click destination'}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Game Info */}
