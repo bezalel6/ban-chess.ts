@@ -8,9 +8,9 @@ A TypeScript wrapper library for implementing the **Ban Chess** variant on top o
 
 **Key concept**: Bans happen BEFORE moves. The opponent always bans one of your moves right before your turn, limiting your options. This is why Black bans first - they ban a White move before White's opening move.
 
-## 🎮 Try It Online
+## Try It Online
 
-Play Ban Chess in your browser: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
+In the `gui/` directory of this repo, I've implemented a basic playground to test and experiment with the variant and the library: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
 
 ## Overview
 
