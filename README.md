@@ -1,8 +1,16 @@
 # ban-chess.ts
 
+[![npm version](https://img.shields.io/npm/v/ban-chess.ts.svg)](https://www.npmjs.com/package/ban-chess.ts)
+[![npm downloads](https://img.shields.io/npm/dm/ban-chess.ts.svg)](https://www.npmjs.com/package/ban-chess.ts)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+
 A TypeScript wrapper library for implementing the **Ban Chess** variant on top of the `chess.ts` library. In Ban Chess, players must navigate around banned moves - each move is preceded by the opponent banning one of their legal options.
 
 **Key concept**: Bans happen BEFORE moves. The opponent always bans one of your moves right before your turn, limiting your options. This is why Black bans first - they ban a White move before White's opening move.
+
+## 🎮 Try It Online
+
+Play Ban Chess in your browser: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
 
 ## Overview
 
