@@ -25,7 +25,7 @@ Ban Chess follows this turn sequence:
 
 ### Checkmate Condition
 
-The key strategic element: When a king is in check and has only **one legal move** to escape, that player is essentially in checkmate already - because their opponent will ban that escape move on the next turn, leaving zero legal moves.
+The key strategic element: When a king is in check and has only **one legal move** to escape, the opponent can achieve checkmate by banning that single escape move, leaving zero legal moves. The checkmate must be executed - it doesn't happen automatically.
 
 ## Installation
 
@@ -242,7 +242,7 @@ if (game.currentBannedMove) {
 if (game.inCheck()) {
   const legalMoves = game.legalMoves();
   if (legalMoves.length === 1) {
-    console.log('Only one escape move - vulnerable to ban checkmate!');
+    console.log('Only one escape move - opponent can checkmate by banning it!');
   }
 }
 
