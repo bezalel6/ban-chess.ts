@@ -247,10 +247,10 @@ export function ChessBoard() {
                   lastMove.from === square || lastMove.to === square
                 );
                 const isLegalBan = game.nextActionType() === 'ban' && 
+                  selectedSquare &&
                   legalBans.some(ban => 
                     (selectedSquare === ban.from && square === ban.to) ||
-                    (selectedSquare === ban.to && square === ban.from) ||
-                    (!selectedSquare && (ban.from === square || ban.to === square))
+                    (selectedSquare === ban.to && square === ban.from)
                   );
 
                 return (
