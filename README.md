@@ -109,7 +109,7 @@ class BanChess {
   gameOver(): boolean;
   
   // State management
-  fen(): string;
+  fen(): string;  // Extended FEN with ban state
   pgn(): string;  // Includes ban annotations as comments
   history(): HistoryEntry[];
   reset(): void;
@@ -195,6 +195,40 @@ if (game.nextActionType() === 'move') {
 
 ### Advanced Features
 
+#### Extended FEN Format
+
+Ban Chess extends standard FEN notation with a 7th field to track ban state:
+
+```
+[standard 6 FEN fields] [ban-state]
+```
+
+Ban state field format:
+- `b:[from][to]` - Active ban (e.g., `b:e2e4` means e2-e4 is banned)
+- `w:ban` - White's turn to ban
+- `b:ban` - Black's turn to ban  
+- `-` - No active ban (normal move expected)
+
+Examples:
+```typescript
+// Standard starting position, Black to ban White's first move
+"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 b:ban"
+
+// After Black bans e2-e4, White to move (with ban in effect)
+"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 b:e2e4"
+
+// After White plays d2-d4, White to ban Black's response
+"rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1 w:ban"
+
+// After White bans e7-e5, Black to move (with ban in effect)
+"rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1 b:e7e5"
+```
+
+This extension ensures the complete game state can be restored from FEN, including:
+- Who is about to ban
+- What move is currently banned
+- Whether the next action is a ban or a move
+
 #### Game State Analysis
 
 ```typescript
@@ -250,15 +284,21 @@ console.log(game.pgn());
 #### Loading Games
 
 ```typescript
-// From FEN (standard position)
-const game1 = new BanChess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+// From extended FEN with ban state
+const game1 = new BanChess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 b:ban');
+// Game starts with Black ready to ban
+
+// From FEN with active ban
+const game2 = new BanChess('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 b:e2e4');
+// White to move with e2-e4 banned
 
 // From PGN with ban history
 const pgn = '1. {banning: e2e4} d4 {banning: e7e5} d5 2. {banning: g1f3} Bf4';
-const game2 = new BanChess(undefined, pgn);
+const game3 = new BanChess(undefined, pgn);
 
-// Game state restored with ban history
-console.log(game2.history());
+// Game state fully restored including ban state
+console.log(game3.fen()); // Includes ban state field
+console.log(game3.history());
 ```
 
 ## Usage Examples
