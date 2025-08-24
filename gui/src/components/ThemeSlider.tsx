@@ -19,24 +19,36 @@ interface ThemeSliderProps {
 export const ThemeSlider: React.FC<ThemeSliderProps> = ({ currentTheme, onThemeChange }) => {
   const currentIndex = THEMES.findIndex(t => t.id === currentTheme);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const index = parseInt(e.target.value);
-    onThemeChange(THEMES[index].id);
+  const handlePrevious = () => {
+    const newIndex = currentIndex <= 0 ? THEMES.length - 1 : currentIndex - 1;
+    onThemeChange(THEMES[newIndex].id);
+  };
+
+  const handleNext = () => {
+    const newIndex = currentIndex >= THEMES.length - 1 ? 0 : currentIndex + 1;
+    onThemeChange(THEMES[newIndex].id);
   };
 
   return (
-    <div className="theme-slider">
-      <label>
-        <span>Theme: {THEMES[currentIndex]?.name || 'Classic'}</span>
-        <input
-          type="range"
-          min="0"
-          max={THEMES.length - 1}
-          value={currentIndex}
-          onChange={handleChange}
-          className="slider"
-        />
-      </label>
+    <div className="theme-carousel">
+      <button 
+        className="carousel-arrow left" 
+        onClick={handlePrevious}
+        aria-label="Previous theme"
+      >
+        ◀
+      </button>
+      <div className="carousel-display">
+        <span className="carousel-label">Theme:</span>
+        <span className="carousel-value">{THEMES[currentIndex]?.name || 'Classic'}</span>
+      </div>
+      <button 
+        className="carousel-arrow right" 
+        onClick={handleNext}
+        aria-label="Next theme"
+      >
+        ▶
+      </button>
     </div>
   );
 };
