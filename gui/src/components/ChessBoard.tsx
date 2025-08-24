@@ -101,13 +101,13 @@ export function ChessBoard() {
           /stroke-width="[^"]*"/g,
           `stroke-width="${strokeWidth}"`
         );
-        
+
         // Update stroke color
         modifiedSvg = modifiedSvg.replace(
           /stroke="[^"]*"/g,
           `stroke="${strokeColor}"`
         );
-        
+
         // We'll update fill colors dynamically per piece type
         // For now, keep the original fill attribute
 
@@ -140,7 +140,14 @@ export function ChessBoard() {
       }
       setModifiedSvgs(updated);
     }
-  }, [strokeWidth, pieceScale, strokeColor, whitePieceFill, blackPieceFill, originalSvgs]);
+  }, [
+    strokeWidth,
+    pieceScale,
+    strokeColor,
+    whitePieceFill,
+    blackPieceFill,
+    originalSvgs,
+  ]);
 
   // Update CSS variables when settings change
   useEffect(() => {
@@ -294,7 +301,7 @@ export function ChessBoard() {
       // Apply the appropriate fill color based on piece color
       const fillColor = isWhite ? whitePieceFill : blackPieceFill;
       svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${fillColor}"`);
-      
+
       // Convert SVG string to data URL
       const encodedSvg = encodeURIComponent(svgContent);
       imageSrc = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
@@ -462,9 +469,7 @@ export function ChessBoard() {
             </div>
 
             <div className="control-group">
-              <label className="control-label">
-                White Piece Fill Color
-              </label>
+              <label className="control-label">White Piece Fill Color</label>
               <input
                 type="color"
                 value={whitePieceFill}
@@ -474,9 +479,7 @@ export function ChessBoard() {
             </div>
 
             <div className="control-group">
-              <label className="control-label">
-                Black Piece Fill Color
-              </label>
+              <label className="control-label">Black Piece Fill Color</label>
               <input
                 type="color"
                 value={blackPieceFill}
@@ -486,9 +489,7 @@ export function ChessBoard() {
             </div>
 
             <div className="control-group">
-              <label className="control-label">
-                Stroke/Outline Color
-              </label>
+              <label className="control-label">Stroke/Outline Color</label>
               <input
                 type="color"
                 value={strokeColor}

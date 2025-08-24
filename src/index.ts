@@ -1,4 +1,4 @@
-export { BanChess } from './BanChess';
+export { BanChess } from './BanChess.js';
 export type { 
   Move, 
   Ban, 
@@ -7,4 +7,4 @@ export type {
   HistoryEntry, 
   Color, 
   ActionType 
-} from './types';
+} from './types.js';

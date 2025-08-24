@@ -7,7 +7,7 @@ import {
   HistoryEntry, 
   Color, 
   ActionType 
-} from './types';
+} from './types.js';
 
 export class BanChess {
   private chess: Chess;

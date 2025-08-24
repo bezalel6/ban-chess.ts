@@ -1,6 +1,6 @@
 {
   "name": "ban-chess.ts",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A TypeScript wrapper library for implementing the **Ban Chess** variant on top of the `chess.ts` library. In Ban Chess, players must navigate around banned moves - each move is preceded by the opponent banning one of their legal options.",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
