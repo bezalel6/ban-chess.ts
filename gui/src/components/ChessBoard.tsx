@@ -51,35 +51,36 @@ export function ChessBoard() {
   // Visual customization states
   const [boardSize, setBoardSize] = useState(4);
   const [showControls, setShowControls] = useState(true);
-  const [currentTheme, setCurrentTheme] = useState('classic');
+  const [currentTheme, setCurrentTheme] = useState("classic");
 
   useEffect(() => {
     updateBoard();
   }, []);
 
   // Get piece image path based on theme
-  const getPieceImage = (piece: string | null, square: string): string | null => {
+  const getPieceImage = (piece: string | null, _: string): string | null => {
     if (!piece) return null;
-    
+
     const isWhite = piece === piece.toUpperCase();
     const pieceType = piece.toUpperCase();
-    const theme = THEMES.find(t => t.id === currentTheme) || THEMES[0];
-    
+    const theme = THEMES.find((t) => t.id === currentTheme) || THEMES[0];
+
     const pieceMap: Record<string, string> = {
-      'K': 'King',
-      'Q': 'Queen',
-      'R': 'Rook',
-      'B': 'Bishop',
-      'N': 'Knight',
-      'P': 'Pawn'
+      K: "King",
+      Q: "Queen",
+      R: "Rook",
+      B: "Bishop",
+      N: "Knight",
+      P: "Pawn",
     };
-    
+
     const pieceName = pieceMap[pieceType];
     if (!pieceName) return null;
-    
-    return `${BASE_PATH}${theme.path}/${isWhite ? 'white' : 'black'}/${pieceName}.png`;
-  };
 
+    return `${BASE_PATH}${theme.path}/${
+      isWhite ? "white" : "black"
+    }/${pieceName}.png`;
+  };
 
   // Update CSS variables when settings change
   useEffect(() => {
@@ -294,7 +295,7 @@ export function ChessBoard() {
             </div>
 
             <div className="control-group">
-              <ThemeSlider 
+              <ThemeSlider
                 currentTheme={currentTheme}
                 onThemeChange={setCurrentTheme}
               />
