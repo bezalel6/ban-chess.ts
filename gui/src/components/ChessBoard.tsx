@@ -1,16 +1,9 @@
 import { useState, useEffect } from "preact/hooks";
 import { BanChess } from "ban-chess.ts";
 import type { Move } from "ban-chess.ts";
+import { ThemeSlider, THEMES } from "./ThemeSlider";
 
 const BASE_PATH = import.meta.env.BASE_URL;
-const PIECE_SVGS: Record<string, string> = {
-  K: `${BASE_PATH}chess-king.svg`,
-  Q: `${BASE_PATH}chess-queen.svg`,
-  R: `${BASE_PATH}chess-rook.svg`,
-  B: `${BASE_PATH}chess-bishop.svg`,
-  N: `${BASE_PATH}chess-knight.svg`,
-  P: `${BASE_PATH}chess-pawn.svg`,
-};
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
@@ -57,106 +50,42 @@ export function ChessBoard() {
 
   // Visual customization states
   const [boardSize, setBoardSize] = useState(4);
-  const [strokeWidth, setStrokeWidth] = useState(16);
-  const [pieceScale, setPieceScale] = useState(1);
-  const [strokeOpacity, setStrokeOpacity] = useState(1);
-  const [pieceContrast, setPieceContrast] = useState(1);
-  const [pieceBrightness, setPieceBrightness] = useState(1);
-  const [whitePieceFill, setWhitePieceFill] = useState("#ffffff");
-  const [blackPieceFill, setBlackPieceFill] = useState("#000000");
-  const [strokeColor, setStrokeColor] = useState("#000000");
   const [showControls, setShowControls] = useState(true);
-  const [originalSvgs, setOriginalSvgs] = useState<Record<string, string>>({});
-  const [modifiedSvgs, setModifiedSvgs] = useState<Record<string, string>>({});
+  const [currentTheme, setCurrentTheme] = useState('classic');
 
   useEffect(() => {
     updateBoard();
-    loadSVGs();
   }, []);
 
-  // Load and cache SVGs
-  const loadSVGs = async () => {
-    const cache: Record<string, string> = {};
-    for (const [piece, path] of Object.entries(PIECE_SVGS)) {
-      try {
-        const response = await fetch(path);
-        const svgText = await response.text();
-        cache[piece] = svgText;
-      } catch (error) {
-        console.error(`Failed to load SVG for ${piece}:`, error);
-      }
-    }
-    setOriginalSvgs(cache);
+  // Get piece image path based on theme
+  const getPieceImage = (piece: string | null, square: string): string | null => {
+    if (!piece) return null;
+    
+    const isWhite = piece === piece.toUpperCase();
+    const pieceType = piece.toUpperCase();
+    const theme = THEMES.find(t => t.id === currentTheme) || THEMES[0];
+    
+    const pieceMap: Record<string, string> = {
+      'K': 'King',
+      'Q': 'Queen',
+      'R': 'Rook',
+      'B': 'Bishop',
+      'N': 'Knight',
+      'P': 'Pawn'
+    };
+    
+    const pieceName = pieceMap[pieceType];
+    if (!pieceName) return null;
+    
+    return `${BASE_PATH}${theme.path}/${isWhite ? 'white' : 'black'}/${pieceName}.png`;
   };
 
-  // Update SVGs when visual properties change
-  useEffect(() => {
-    if (Object.keys(originalSvgs).length > 0) {
-      const updated: Record<string, string> = {};
-      for (const [piece, originalSvg] of Object.entries(originalSvgs)) {
-        let modifiedSvg = originalSvg;
-
-        // Update stroke-width
-        modifiedSvg = modifiedSvg.replace(
-          /stroke-width="[^"]*"/g,
-          `stroke-width="${strokeWidth}"`
-        );
-
-        // Update stroke color
-        modifiedSvg = modifiedSvg.replace(
-          /stroke="[^"]*"/g,
-          `stroke="${strokeColor}"`
-        );
-
-        // We'll update fill colors dynamically per piece type
-        // For now, keep the original fill attribute
-
-        // Handle piece scaling
-        const viewBoxMatch = modifiedSvg.match(/viewBox="0 0 (\d+) (\d+)"/);
-        if (viewBoxMatch) {
-          const width = parseInt(viewBoxMatch[1]);
-          const height = parseInt(viewBoxMatch[2]);
-          const centerX = width / 2;
-          const centerY = height / 2;
-
-          // Apply transform to the group containing the path
-          const transformValue =
-            pieceScale !== 1
-              ? `transform="translate(${centerX}, ${centerY}) scale(${pieceScale}) translate(-${centerX}, -${centerY})"`
-              : "";
-
-          // Update existing group transform or add it if not present
-          if (modifiedSvg.includes("<g>")) {
-            modifiedSvg = modifiedSvg.replace(
-              /<g[^>]*>/,
-              `<g ${transformValue}>`
-            );
-          } else if (modifiedSvg.includes("<g ")) {
-            modifiedSvg = modifiedSvg.replace(/<g /, `<g ${transformValue} `);
-          }
-        }
-
-        updated[piece] = modifiedSvg;
-      }
-      setModifiedSvgs(updated);
-    }
-  }, [
-    strokeWidth,
-    pieceScale,
-    strokeColor,
-    whitePieceFill,
-    blackPieceFill,
-    originalSvgs,
-  ]);
 
   // Update CSS variables when settings change
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty("--board-size", `${boardSize}rem`);
-    root.style.setProperty("--stroke-opacity", `${strokeOpacity}`);
-    root.style.setProperty("--piece-contrast", `${pieceContrast}`);
-    root.style.setProperty("--piece-brightness", `${pieceBrightness}`);
-  }, [boardSize, strokeOpacity, pieceContrast, pieceBrightness]);
+  }, [boardSize]);
 
   const updateBoard = () => {
     const fen = game.fen().split(" ")[0];
@@ -289,33 +218,14 @@ export function ChessBoard() {
     forceUpdate({});
   };
 
-  const renderPiece = (piece: string) => {
-    const isWhite = piece === piece.toUpperCase();
-    const pieceType = piece.toUpperCase();
-
-    // Use modified SVG if available, otherwise fall back to original path
-    let svgContent = modifiedSvgs[pieceType];
-    let imageSrc = PIECE_SVGS[pieceType];
-
-    if (svgContent) {
-      // Apply the appropriate fill color based on piece color
-      const fillColor = isWhite ? whitePieceFill : blackPieceFill;
-      svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${fillColor}"`);
-
-      // Convert SVG string to data URL
-      const encodedSvg = encodeURIComponent(svgContent);
-      imageSrc = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
-    }
-
+  const renderPiece = (piece: string, square: string) => {
+    const imageSrc = getPieceImage(piece, square);
     if (!imageSrc) return null;
 
+    const isWhite = piece === piece.toUpperCase();
+
     return (
-      <div
-        className="piece-wrapper"
-        style={{
-          opacity: strokeOpacity,
-        }}
-      >
+      <div className="piece-wrapper">
         <img
           src={imageSrc}
           alt={piece}
@@ -384,117 +294,9 @@ export function ChessBoard() {
             </div>
 
             <div className="control-group">
-              <label className="control-label">
-                Stroke Width (Outline): {strokeWidth}px
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="32"
-                step="2"
-                value={strokeWidth}
-                onChange={(e) =>
-                  setStrokeWidth(parseInt((e.target as any).value))
-                }
-                className="control-slider"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">
-                Piece Thickness: {Math.round(pieceScale * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0.7"
-                max="1.3"
-                step="0.05"
-                value={pieceScale}
-                onChange={(e) =>
-                  setPieceScale(parseFloat((e.target as any).value))
-                }
-                className="control-slider"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">
-                Stroke Opacity: {Math.round(strokeOpacity * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={strokeOpacity}
-                onChange={(e) =>
-                  setStrokeOpacity(parseFloat((e.target as any).value))
-                }
-                className="control-slider"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">
-                Piece Contrast: {Math.round(pieceContrast * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={pieceContrast}
-                onChange={(e) =>
-                  setPieceContrast(parseFloat((e.target as any).value))
-                }
-                className="control-slider"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">
-                Piece Brightness: {Math.round(pieceBrightness * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="1.5"
-                step="0.1"
-                value={pieceBrightness}
-                onChange={(e) =>
-                  setPieceBrightness(parseFloat((e.target as any).value))
-                }
-                className="control-slider"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">White Piece Fill Color</label>
-              <input
-                type="color"
-                value={whitePieceFill}
-                onChange={(e) => setWhitePieceFill((e.target as any).value)}
-                className="control-color"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">Black Piece Fill Color</label>
-              <input
-                type="color"
-                value={blackPieceFill}
-                onChange={(e) => setBlackPieceFill((e.target as any).value)}
-                className="control-color"
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">Stroke/Outline Color</label>
-              <input
-                type="color"
-                value={strokeColor}
-                onChange={(e) => setStrokeColor((e.target as any).value)}
-                className="control-color"
+              <ThemeSlider 
+                currentTheme={currentTheme}
+                onThemeChange={setCurrentTheme}
               />
             </div>
           </div>
@@ -585,7 +387,7 @@ export function ChessBoard() {
                         : ""
                     }`}
                   >
-                    {piece && renderPiece(piece)}
+                    {piece && renderPiece(piece, square)}
                     {isLegal && !piece && <div className="move-dot" />}
                     {isBanned && (
                       <div className="ban-overlay">

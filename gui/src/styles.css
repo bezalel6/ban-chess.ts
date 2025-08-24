@@ -375,6 +375,62 @@ body {
   font-style: italic;
 }
 
+/* Theme Slider */
+.theme-slider {
+  width: 100%;
+}
+
+.theme-slider label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+.theme-slider .slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #374151;
+  border-radius: 3px;
+  outline: none;
+  transition: background 0.2s;
+}
+
+.theme-slider .slider:hover {
+  background: #4b5563;
+}
+
+.theme-slider .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #8b5cf6;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.theme-slider .slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #8b5cf6;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.theme-slider .slider::-webkit-slider-thumb:hover {
+  background: #a78bfa;
+}
+
+.theme-slider .slider::-moz-range-thumb:hover {
+  background: #a78bfa;
+}
+
 /* Dot indicators */
 .dot {
   width: 0.75rem;
