@@ -10,7 +10,7 @@ A TypeScript wrapper library for implementing the **Ban Chess** variant on top o
 
 ## Try It Online
 
-In the `gui/` directory of this repo, I've implemented a basic playground to test and experiment with the variant and the library: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
+You can access this playground to test and experiment with the variant: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
 
 ## Overview
 
