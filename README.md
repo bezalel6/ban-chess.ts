@@ -333,6 +333,18 @@ console.log('PGN:', game.pgn());
 
 
 
+## Development
+
+### Building
+
+```bash
+npm run build        # Build both CommonJS and ESM
+npm run build:cjs    # Build CommonJS only  
+npm run build:esm    # Build ESM only
+```
+
+**Note:** The `prepublishOnly` script automatically builds and tests before publishing to npm.
+
 ## Compatibility
 
 - Node.js: 14+
