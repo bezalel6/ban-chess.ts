@@ -6,7 +6,8 @@ import {
   ActionResult, 
   HistoryEntry, 
   Color, 
-  ActionType 
+  ActionType,
+  Square 
 } from './types.js';
 
 export class BanChess {
@@ -181,8 +182,8 @@ export class BanChess {
     
     const chessMoves = this.chess.moves({ verbose: true });
     const moves: Move[] = chessMoves.map(m => ({
-      from: m.from,
-      to: m.to,
+      from: m.from as Square,
+      to: m.to as Square,
       promotion: m.promotion as 'q' | 'r' | 'b' | 'n' | undefined
     }));
     
@@ -203,8 +204,8 @@ export class BanChess {
     if (this._isFirstMove) {
       const moves = tempChess.moves({ verbose: true });
       return moves.map(m => ({
-        from: m.from,
-        to: m.to
+        from: m.from as Square,
+        to: m.to as Square
       }));
     }
     
@@ -216,8 +217,8 @@ export class BanChess {
       const key = `${m.from}-${m.to}`;
       if (!uniqueBans.has(key)) {
         uniqueBans.set(key, {
-          from: m.from,
-          to: m.to
+          from: m.from as Square,
+          to: m.to as Square
         });
       }
     });
@@ -324,8 +325,8 @@ export class BanChess {
           this._isFirstMove = false;
         } else if (value.length === 4) {
           this._currentBannedMove = {
-            from: value.substring(0, 2),
-            to: value.substring(2, 4)
+            from: value.substring(0, 2) as Square,
+            to: value.substring(2, 4) as Square
           };
           this._isFirstMove = false;
         }
@@ -352,8 +353,8 @@ export class BanChess {
         const banMatch = token.match(/([a-h][1-8])([a-h][1-8])/);
         if (banMatch) {
           const ban: Ban = {
-            from: banMatch[1],
-            to: banMatch[2]
+            from: banMatch[1] as Square,
+            to: banMatch[2] as Square
           };
           this.play({ ban });
         }
