@@ -40,3 +40,12 @@ export interface HistoryEntry {
 
 export type Color = 'white' | 'black';
 export type ActionType = 'ban' | 'move';
+
+// Serialized action formats for network transmission
+export type SerializedAction = string; // Format: "b:e2e4" for ban, "m:e2e4" for move, "m:e7e8q" for promotion
+
+export interface SyncState {
+  fen: string;
+  lastAction?: SerializedAction;
+  moveNumber: number;
+}

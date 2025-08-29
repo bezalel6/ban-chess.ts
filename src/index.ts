@@ -6,5 +6,10 @@ export type {
   ActionResult, 
   HistoryEntry, 
   Color, 
-  ActionType 
+  ActionType,
+  Square,
+  File,
+  Rank,
+  SerializedAction,
+  SyncState
 } from './types.js';

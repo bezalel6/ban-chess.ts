@@ -7,7 +7,9 @@ import type {
   HistoryEntry,
   Color,
   ActionType,
-  Square
+  Square,
+  SerializedAction,
+  SyncState
 } from './types.js';
 
 export class BanChess {
@@ -303,6 +305,132 @@ export class BanChess {
     this._history = [];
     this._turnNumber = 1;
     this._isFirstMove = true;
+  }
+  
+  // Serialization methods for network synchronization
+  
+  /**
+   * Serialize an action to a compact string format
+   * @param action The action to serialize
+   * @returns Serialized action string (e.g., "b:e2e4" or "m:e2e4q")
+   */
+  static serializeAction(action: Action): SerializedAction {
+    if ('ban' in action) {
+      return `b:${action.ban.from}${action.ban.to}`;
+    } else {
+      const move = action.move;
+      return `m:${move.from}${move.to}${move.promotion || ''}`;
+    }
+  }
+  
+  /**
+   * Deserialize a string to an Action object
+   * @param serialized The serialized action string
+   * @returns The Action object
+   * @throws Error if the format is invalid
+   */
+  static deserializeAction(serialized: SerializedAction): Action {
+    const match = serialized.match(/^([bm]):([a-h][1-8])([a-h][1-8])([qrbn])?$/);
+    if (!match) {
+      throw new Error(`Invalid serialized action format: ${serialized}`);
+    }
+    
+    const [, type, from, to, promotion] = match;
+    
+    if (type === 'b') {
+      return { ban: { from: from as Square, to: to as Square } };
+    } else {
+      const move: Move = { from: from as Square, to: to as Square };
+      if (promotion) {
+        move.promotion = promotion as 'q' | 'r' | 'b' | 'n';
+      }
+      return { move };
+    }
+  }
+  
+  /**
+   * Get the last action as a serialized string
+   * @returns The last action in serialized format, or null if no actions
+   */
+  getLastActionSerialized(): SerializedAction | null {
+    if (this._history.length === 0) return null;
+    
+    const lastEntry = this._history[this._history.length - 1];
+    const action = lastEntry.actionType === 'ban' 
+      ? { ban: lastEntry.action as Ban }
+      : { move: lastEntry.action as Move };
+    
+    return BanChess.serializeAction(action);
+  }
+  
+  /**
+   * Get a sync state object for network transmission
+   * @returns Current state with minimal data for sync
+   */
+  getSyncState(): SyncState {
+    return {
+      fen: this.fen(),
+      lastAction: this.getLastActionSerialized() || undefined,
+      moveNumber: this._turnNumber
+    };
+  }
+  
+  /**
+   * Apply a serialized action to the current game state
+   * @param serialized The serialized action to apply
+   * @returns The result of applying the action
+   */
+  playSerializedAction(serialized: SerializedAction): ActionResult {
+    try {
+      const action = BanChess.deserializeAction(serialized);
+      return this.play(action);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid serialized action'
+      };
+    }
+  }
+  
+  /**
+   * Load game state from a sync state object
+   * @param syncState The sync state to load
+   */
+  loadFromSyncState(syncState: SyncState): void {
+    this.loadFromFEN(syncState.fen);
+    this._turnNumber = syncState.moveNumber;
+  }
+  
+  /**
+   * Get a compact string representation of all actions in the game
+   * @returns Array of serialized actions in order
+   */
+  getActionHistory(): SerializedAction[] {
+    return this._history.map(entry => {
+      const action = entry.actionType === 'ban'
+        ? { ban: entry.action as Ban }
+        : { move: entry.action as Move };
+      return BanChess.serializeAction(action);
+    });
+  }
+  
+  /**
+   * Replay a game from a series of serialized actions
+   * @param actions Array of serialized actions to replay
+   * @param startingFen Optional starting FEN (defaults to initial position)
+   * @returns true if all actions were successfully applied
+   */
+  static replayFromActions(actions: SerializedAction[], startingFen?: string): BanChess {
+    const game = new BanChess(startingFen);
+    
+    for (const action of actions) {
+      const result = game.playSerializedAction(action);
+      if (!result.success) {
+        throw new Error(`Failed to replay action ${action}: ${result.error}`);
+      }
+    }
+    
+    return game;
   }
   
   private loadFromFEN(fen: string): void {
