@@ -12,8 +12,10 @@ import type {
   SyncState
 } from './types.js';
 
+import { VERSION } from './version.js';
+
 export class BanChess {
-  static readonly VERSION = '0.0.0-PLACEHOLDER'; // This will be replaced during build
+  static readonly VERSION = VERSION;
   
   private chess: Chess;
   private _currentBannedMove: Ban | null = null;

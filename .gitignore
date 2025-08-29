@@ -8,6 +8,9 @@ build/
 *.d.ts
 *.js.map
 
+# Auto-generated files
+src/version.ts
+
 # Test coverage
 coverage/
 *.lcov
