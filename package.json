@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "prebuild": "node scripts/inject-version.js",
     "build": "npm run build:cjs && npm run build:esm",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:esm": "tsc -p tsconfig.esm.json",

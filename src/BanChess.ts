@@ -13,6 +13,8 @@ import type {
 } from './types.js';
 
 export class BanChess {
+  static readonly VERSION = '0.0.0-PLACEHOLDER'; // This will be replaced during build
+  
   private chess: Chess;
   private _currentBannedMove: Ban | null = null;
   private _history: HistoryEntry[] = [];
