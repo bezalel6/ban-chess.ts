@@ -5,6 +5,17 @@ All notable changes to ban-chess.ts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-08-29
+
+### Added
+- `BanChess.VERSION` static property for runtime version checking
+- Automatic version injection during build process
+- Version display in GUI header
+
+### Fixed
+- GUI now uses 'latest' tag to always get newest library version
+- GitHub Pages deployment workflow for submodule structure
+
 ## [1.2.0] - 2025-08-29
 
 ### Added
