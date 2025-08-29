@@ -1,13 +1,13 @@
 import { Chess } from 'chess.ts';
-import { 
-  Move, 
-  Ban, 
-  Action, 
-  ActionResult, 
-  HistoryEntry, 
-  Color, 
+import type {
+  Move,
+  Ban,
+  Action,
+  ActionResult,
+  HistoryEntry,
+  Color,
   ActionType,
-  Square 
+  Square
 } from './types.js';
 
 export class BanChess {
