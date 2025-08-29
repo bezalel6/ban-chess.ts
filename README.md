@@ -171,6 +171,59 @@ interface ActionResult {
 }
 ```
 
+## Serialization & Network Synchronization (v1.2.0+)
+
+Ban Chess provides standardized serialization for efficient network communication between clients.
+
+### Ban Chess Notation (BCN)
+
+Compact string format for actions:
+- **Ban**: `b:e2e4` (6 characters)
+- **Move**: `m:d2d4` (6 characters) 
+- **Promotion**: `m:e7e8q` (7-8 characters)
+
+### Serialization API
+
+```typescript
+// Serialize actions
+const serialized = BanChess.serializeAction({ ban: { from: 'e2', to: 'e4' } });
+// Returns: "b:e2e4"
+
+// Deserialize actions
+const action = BanChess.deserializeAction('m:d2d4');
+// Returns: { move: { from: 'd2', to: 'd4' } }
+
+// Apply serialized actions directly
+game.playSerializedAction('b:e2e4');
+
+// Get sync state for network transmission
+const syncState = game.getSyncState();
+// Returns: { fen: string, lastAction?: string, moveNumber: number }
+
+// Load from sync state
+game.loadFromSyncState(syncState);
+
+// Get complete action history
+const history = game.getActionHistory();
+// Returns: ['b:e2e4', 'm:d2d4', 'b:e7e5', 'm:d7d5']
+
+// Replay game from actions
+const game = BanChess.replayFromActions(history);
+```
+
+### Network Example
+
+```typescript
+// WebSocket - Send only the action (6-8 bytes)
+ws.send(BanChess.serializeAction(action));
+
+// REST API - Minimal payload
+POST /api/game/action
+{ "action": "b:e2e4" }
+```
+
+See [docs/SYNCHRONIZATION.md](docs/SYNCHRONIZATION.md) for complete implementation examples.
+
 ## Extended FEN Format
 
 Ban Chess extends standard FEN with a 7th field for ban state:
