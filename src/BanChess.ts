@@ -250,6 +250,20 @@ export class BanChess {
     return this.inCheckmate() || this.inStalemate();
   }
   
+  /**
+   * Returns the color of the player who needs to perform the next action (ban or move)
+   */
+  currentPlayer(): Color {
+    return this.turn;
+  }
+  
+  /**
+   * Returns the color of the player whose piece will move next
+   */
+  nextMoveColor(): Color {
+    return this.chess.turn() === 'w' ? 'white' : 'black';
+  }
+  
   fen(): string {
     const baseFen = this.chess.fen();
     let banState: string;
