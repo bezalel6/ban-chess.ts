@@ -49,3 +49,12 @@ export interface SyncState {
   lastAction?: SerializedAction;
   moveNumber: number;
 }
+
+export interface IndicatorConfig {
+  /** Include indicators in PGN notation (default: true) */
+  pgn?: boolean;
+  /** Include indicators in serialized actions (default: true) */
+  serialization?: boolean;
+  /** Include indicators in SAN notation for moves (default: true) */
+  san?: boolean;
+}

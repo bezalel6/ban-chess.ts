@@ -139,6 +139,10 @@ class BanChess {
   inCheckmate(): boolean;
   inStalemate(): boolean;
   gameOver(): boolean;
+  
+  // Indicator configuration (v2.0.0+)
+  setIndicatorConfig(config: IndicatorConfig): void;
+  getIndicatorConfig(): IndicatorConfig;
 }
 ```
 
@@ -169,6 +173,12 @@ interface ActionResult {
   checkmate?: boolean;
   stalemate?: boolean;
 }
+
+interface IndicatorConfig {
+  pgn?: boolean;         // Include indicators in PGN notation (default: true)
+  serialization?: boolean; // Include indicators in serialized actions (default: true)
+  san?: boolean;          // Include indicators in SAN notation (default: true)
+}
 ```
 
 ## Serialization & Network Synchronization (v1.2.0+)
@@ -181,6 +191,7 @@ Compact string format for actions:
 - **Ban**: `b:e2e4` (6 characters)
 - **Move**: `m:d2d4` (6 characters) 
 - **Promotion**: `m:e7e8q` (7-8 characters)
+- **With indicators**: `m:d8h4#` (check/checkmate/stalemate indicators)
 
 ### Serialization API
 
@@ -224,6 +235,35 @@ POST /api/game/action
 
 See [docs/SYNCHRONIZATION.md](docs/SYNCHRONIZATION.md) for complete implementation examples.
 
+## Game State Indicators
+
+The library supports standard chess notation indicators for game states:
+- `+` for check
+- `#` for checkmate  
+- `=` for stalemate
+
+These indicators appear in PGN, SAN, and serialized actions by default. You can configure where indicators appear:
+
+```typescript
+// Configure indicator display
+game.setIndicatorConfig({
+  pgn: true,          // Show indicators in PGN notation (default: true)
+  serialization: true, // Show indicators in serialized actions (default: true)
+  san: true           // Show indicators in SAN notation (default: true)
+});
+
+// Get current configuration
+const config = game.getIndicatorConfig();
+
+// Example with indicators disabled for serialization
+game.setIndicatorConfig({ pgn: true, serialization: false, san: true });
+const action = game.getLastActionSerialized(); // Returns "m:d8h4" instead of "m:d8h4#"
+```
+
+The library also detects unique Ban Chess scenarios where bans cause game endings:
+- Banning the only escape from check results in checkmate
+- Banning the only legal move results in stalemate
+
 ## Extended FEN Format
 
 Ban Chess extends standard FEN with a 7th field for ban state:
@@ -243,9 +283,10 @@ Ban Chess PGN includes ban annotations in comments:
 
 ```
 1. {banning: e2e4} d4 {banning: e7e5} d5
+2. {banning: d2d4} g4 {banning: h7h6} Qh4# 0-1
 ```
 
-Each ban is recorded as `{banning: <from><to>}` before the affected move.
+Each ban is recorded as `{banning: <from><to>}` before the affected move. Game state indicators (+, #, =) are included by default for both moves and bans that cause check, checkmate, or stalemate.
 
 > **Note on notation format**: The library currently uses PGN comments (`{banning: ...}`) for ban notation to maintain compatibility with standard PGN parsers, while the serialization format uses the more compact `b:e2e4` notation for network efficiency. Future versions may consider unifying these formats based on community feedback, though this would be a breaking change.
 

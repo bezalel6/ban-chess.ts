@@ -9,7 +9,8 @@ import type {
   ActionType,
   Square,
   SerializedAction,
-  SyncState
+  SyncState,
+  IndicatorConfig
 } from './types.js';
 
 import { VERSION } from './version.js';
@@ -40,6 +41,11 @@ export class BanChess {
   private _history: HistoryEntry[] = [];
   private _turnNumber: number = 1;
   private _isFirstMove: boolean = true;
+  private _indicatorConfig: IndicatorConfig = {
+    pgn: true,
+    serialization: true,
+    san: true
+  };
   
   /**
    * Creates a new BanChess game instance
@@ -190,13 +196,38 @@ export class BanChess {
     
     this._currentBannedMove = ban;
     
+    // Check if this ban causes checkmate or stalemate
+    // We need to check if the player to move has any legal moves left
+    const tempChess = new Chess(this.chess.fen());
+    const movesBeforeBan = tempChess.moves({ verbose: true });
+    const movesAfterBan = movesBeforeBan.filter(m => 
+      !(m.from === ban.from && m.to === ban.to)
+    );
+    
+    const willCauseCheckmate = movesAfterBan.length === 0 && tempChess.inCheck();
+    const willCauseStalemate = movesAfterBan.length === 0 && !tempChess.inCheck();
+    
+    // Add indicator to the ban if it causes game over
+    let banNotation = `${ban.from}${ban.to}`;
+    if (this._indicatorConfig.san) {
+      if (willCauseCheckmate) {
+        banNotation += '#';
+      } else if (willCauseStalemate) {
+        banNotation += '=';
+      } else if (tempChess.inCheck()) {
+        // Check if player is still in check after the ban
+        banNotation += '+';
+      }
+    }
+    
     const historyEntry: HistoryEntry = {
       turnNumber: this._turnNumber,
       player: this.turn,
       actionType: 'ban',
       action: ban,
       fen: this.fen(),
-      bannedMove: ban
+      bannedMove: ban,
+      san: banNotation  // Store the ban notation with indicators
     };
     
     this._history.push(historyEntry);
@@ -208,7 +239,11 @@ export class BanChess {
     return {
       success: true,
       action: { ban },
-      newFen: this.fen()
+      san: this._indicatorConfig.san ? banNotation : `${ban.from}${ban.to}`,
+      newFen: this.fen(),
+      gameOver: willCauseCheckmate || willCauseStalemate,
+      checkmate: willCauseCheckmate,
+      stalemate: willCauseStalemate
     };
   }
   
@@ -276,10 +311,17 @@ export class BanChess {
     const isCheckmate = this.chess.inCheckmate();
     const isStalemate = this.chess.inStalemate();
     
+    // Respect SAN indicator configuration
+    let san = result.san;
+    if (!this._indicatorConfig.san && san) {
+      // Strip indicators if config disables them
+      san = san.replace(/[+#=]$/, '');
+    }
+    
     return {
       success: true,
       action: { move },
-      san: result.san,
+      san: san,
       newFen: this.fen(),
       gameOver: isGameOver,
       checkmate: isCheckmate,
@@ -459,6 +501,27 @@ export class BanChess {
   }
   
   /**
+   * Configure where game state indicators (+, #, =) appear
+   * @param config - Configuration for indicator display
+   * @example
+   * ```typescript
+   * // Disable indicators in PGN but keep in SAN
+   * game.setIndicatorConfig({ pgn: false, san: true });
+   * ```
+   */
+  setIndicatorConfig(config: IndicatorConfig): void {
+    this._indicatorConfig = { ...this._indicatorConfig, ...config };
+  }
+  
+  /**
+   * Get current indicator configuration
+   * @returns Current indicator configuration
+   */
+  getIndicatorConfig(): IndicatorConfig {
+    return { ...this._indicatorConfig };
+  }
+  
+  /**
    * Returns the color of the player whose piece will move next
    * @returns 'white' or 'black' - whose pieces will move in the next move action
    * @example
@@ -531,26 +594,12 @@ export class BanChess {
         const ban = entry.action as Ban;
         let banNotation = `${ban.from}${ban.to}`;
         
-        // Check the game state after this ban
-        if (i === this._history.length - 1) {
-          // This is the last action in history
-          if (this.gameOver()) {
-            // Game ended due to this ban
-            if (this.inCheckmate()) {
-              // Ban caused checkmate (banned only escape from check)
-              banNotation += '#';
-            } else if (this.inStalemate()) {
-              // Ban caused stalemate (banned only legal move when not in check)  
-              banNotation += '=';
-            }
-          } else if (this.nextActionType() === 'move') {
-            // Check if the player to move is in check after this ban
-            // This happens when the ban restricts moves and the king is under attack
-            const legalMoves = this.legalMoves();
-            if (legalMoves.length > 0 && this.chess.inCheck()) {
-              // Player is in check and has moves (but one was banned)
-              banNotation += '+';
-            }
+        // Use stored san if available and config allows PGN indicators
+        if (this._indicatorConfig.pgn && entry.san) {
+          // Use the san which already has indicators from when the ban was played
+          const indicator = entry.san.match(/[+#=]$/)?.[0];
+          if (indicator) {
+            banNotation += indicator;
           }
         }
         
@@ -559,7 +608,14 @@ export class BanChess {
         if (entry.player === 'white') {
           moveText = `${currentTurn}. ${moveText}`;
         }
-        moveText += `${entry.san} `;
+        
+        // Respect PGN indicator configuration for moves
+        let moveNotation = entry.san || '';
+        if (!this._indicatorConfig.pgn && moveNotation) {
+          // Strip indicators if config disables them
+          moveNotation = moveNotation.replace(/[+#=]$/, '');
+        }
+        moveText += `${moveNotation} `;
         
         if (entry.player === 'black') {
           pgn += moveText;
@@ -751,26 +807,19 @@ export class BanChess {
       ? { ban: lastEntry.action as Ban }
       : { move: lastEntry.action as Move };
     
+    // Only include indicators if configuration allows
+    if (!this._indicatorConfig.serialization) {
+      return BanChess.serializeAction(action);
+    }
+    
     // Determine if we need a game state indicator
     let indicator: '+' | '#' | '=' | undefined;
     
-    if (lastEntry.actionType === 'move') {
-      // For moves, check the SAN notation which already includes +/#
-      if (lastEntry.san?.endsWith('#')) {
-        indicator = '#';
-      } else if (lastEntry.san?.endsWith('+')) {
-        indicator = '+';
-      }
-    } else {
-      // For bans, check if it caused game over or check
-      if (this.gameOver()) {
-        if (this.inCheckmate()) {
-          indicator = '#';
-        } else if (this.inStalemate()) {
-          indicator = '=';
-        }
-      } else if (this.nextActionType() === 'move' && this.chess.inCheck()) {
-        indicator = '+';
+    if (lastEntry.san) {
+      // Use the stored san which has the indicator
+      const match = lastEntry.san.match(/[+#=]$/);
+      if (match) {
+        indicator = match[0] as '+' | '#' | '=';
       }
     }
     
@@ -852,6 +901,11 @@ export class BanChess {
       const action = entry.actionType === 'ban'
         ? { ban: entry.action as Ban }
         : { move: entry.action as Move };
+      
+      // Only include indicators if configuration allows
+      if (!this._indicatorConfig.serialization) {
+        return BanChess.serializeAction(action);
+      }
       
       // Determine if we need a game state indicator
       let indicator: '+' | '#' | '=' | undefined;

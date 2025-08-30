@@ -57,10 +57,11 @@ describe('Chess Pattern Compliance', () => {
       const fenBeforeEp = 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1 b:ban';
       const game = new BanChess(fenBeforeEp);
       
-      // Black bans something, then White can capture en passant
-      game.play({ ban: { from: 'd5', to: 'd4' } });
+      // Black bans a White move (not the en passant)
+      game.play({ ban: { from: 'a2', to: 'a3' } });
       const epCapture = game.play({ move: { from: 'e5', to: 'd6' } });
       
+      expect(epCapture.success).toBe(true);
       expect(epCapture.san).toBe('exd6'); // En passant capture notation
     });
     
@@ -69,15 +70,17 @@ describe('Chess Pattern Compliance', () => {
       const promotionFen = 'rnbqkbnr/pppppP1p/8/8/8/8/PPPPP1PP/RNBQKBNR w KQkq - 0 1 b:ban';
       const game = new BanChess(promotionFen);
       
-      game.play({ ban: { from: 'a7', to: 'a6' } });
+      // Black bans a White move (not the promotion)
+      game.play({ ban: { from: 'a2', to: 'a3' } });
       
-      // Promote to queen
+      // Promote to queen by capturing
       const promoResult = game.play({ 
-        move: { from: 'f7', to: 'f8', promotion: 'q' }
+        move: { from: 'f7', to: 'e8', promotion: 'q' }
       });
       
-      expect(promoResult.san).toMatch(/f8=Q/);
-      expect(game.pgn()).toContain('f8=Q');
+      expect(promoResult.success).toBe(true);
+      expect(promoResult.san).toMatch(/fxe8=Q/);
+      expect(game.pgn()).toContain('fxe8=Q');
     });
     
     it('should handle capture notation', () => {
@@ -97,17 +100,21 @@ describe('Chess Pattern Compliance', () => {
     });
     
     it('should handle disambiguation notation', () => {
-      // Position where two knights can move to same square - with ban state
-      const disambigFen = 'rnbqkb1r/pppppppp/5n2/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 1 b:ban';
+      // Position where two WHITE knights can move to same square (e4)
+      // Knights on c3 and g3 can both reach e4
+      const disambigFen = 'rnbqkbnr/pppppppp/8/8/8/2N3N1/PPPPPPPP/R1BQKB1R w KQkq - 0 1 b:ban';
       const game = new BanChess(disambigFen);
       
-      game.play({ ban: { from: 'e7', to: 'e6' } });
+      // Black bans a White move (not the knight move)
+      game.play({ ban: { from: 'a2', to: 'a3' } });
       
-      // Move the f3 knight to e5 (must disambiguate from f6 knight)
-      const result = game.play({ move: { from: 'f3', to: 'e5' } });
+      // Move the c3 knight to e4 (both c3 and g3 knights can reach e4)
+      const result = game.play({ move: { from: 'c3', to: 'e4' } });
       
-      // Should include file or rank to disambiguate
-      expect(result.san).toMatch(/N[f3]e5/);
+      // Should include file disambiguation since both knights can reach e4
+      expect(result.success).toBe(true);
+      // The SAN should be Nce4 (c-file knight to e4)
+      expect(result.san).toBe('Nce4');
     });
   });
   
