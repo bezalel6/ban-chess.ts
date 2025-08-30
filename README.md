@@ -247,6 +247,8 @@ Ban Chess PGN includes ban annotations in comments:
 
 Each ban is recorded as `{banning: <from><to>}` before the affected move.
 
+> **Note on notation format**: The library currently uses PGN comments (`{banning: ...}`) for ban notation to maintain compatibility with standard PGN parsers, while the serialization format uses the more compact `b:e2e4` notation for network efficiency. Future versions may consider unifying these formats based on community feedback, though this would be a breaking change.
+
 ## Complete Example
 
 ```typescript
