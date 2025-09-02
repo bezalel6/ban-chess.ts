@@ -8,6 +8,8 @@ A TypeScript wrapper library for implementing the **Ban Chess** variant on top o
 
 **Version 3.0.0** introduces a cleaner ply-based API that makes the game flow crystal clear. Each ban and each move is now treated as a separate ply, eliminating confusion about whose "turn" it is.
 
+**Latest**: Automated GUI updates ensure the live demo always uses the newest library version.
+
 ## Try It Online
 
 You can access this playground to test and experiment with the variant: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
