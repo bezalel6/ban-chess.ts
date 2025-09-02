@@ -8,6 +8,9 @@ build/
 *.d.ts
 *.js.map
 
+# Exception for scripts directory
+!scripts/*.js
+
 # Auto-generated files
 src/version.ts
 

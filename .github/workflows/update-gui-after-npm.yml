@@ -1,0 +1,107 @@
+name: Update GUI After NPM Publish
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Check for updates every hour
+    - cron: '0 * * * *'
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GUI_UPDATE_TOKEN || github.token }}
+          submodules: true
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Check for new npm version
+        id: check-version
+        run: |
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Get latest version from npm
+          LATEST_VERSION=$(npm view ban-chess.ts version)
+          echo "Latest npm version: $LATEST_VERSION"
+          
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "Version mismatch detected - need to sync"
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "Versions match - checking GUI"
+          fi
+      
+      - name: Check GUI version
+        id: check-gui
+        run: |
+          cd gui
+          
+          # Get the version of ban-chess.ts that GUI is using
+          GUI_VERSION=$(node -p "require('./package.json').dependencies['ban-chess.ts']")
+          echo "GUI is using ban-chess.ts@$GUI_VERSION"
+          
+          LATEST_VERSION="${{ steps.check-version.outputs.latest }}"
+          
+          # Check if GUI needs update
+          if [[ "$GUI_VERSION" == *"$LATEST_VERSION"* ]]; then
+            echo "GUI already using latest version"
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          else
+            echo "GUI needs update from $GUI_VERSION to $LATEST_VERSION"
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Update GUI dependency
+        if: steps.check-gui.outputs.needs_update == 'true'
+        run: |
+          cd gui
+          
+          # Configure git
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          
+          # Update to latest version
+          npm install ban-chess.ts@latest --save
+          
+          # Commit if there are changes
+          if ! git diff --quiet package.json package-lock.json; then
+            git add package.json package-lock.json
+            git commit -m "chore: Update ban-chess.ts to v${{ steps.check-version.outputs.latest }}"
+            
+            # Push to GUI repository
+            git push origin HEAD:main 2>/dev/null || git push origin HEAD:master
+            
+            echo "GUI dependency updated successfully"
+          else
+            echo "No changes needed in GUI"
+          fi
+      
+      - name: Update submodule reference
+        if: steps.check-gui.outputs.needs_update == 'true'
+        run: |
+          # Check if submodule has changes
+          if ! git diff --quiet gui; then
+            git config user.name "GitHub Actions Bot"
+            git config user.email "actions@github.com"
+            git add gui
+            git commit -m "chore: Update GUI submodule with ban-chess.ts v${{ steps.check-version.outputs.latest }}"
+            git push origin main 2>/dev/null || git push origin master
+            
+            echo "Main repository updated with new GUI reference"
+          else
+            echo "No submodule changes to commit"
+          fi

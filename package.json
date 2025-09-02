@@ -26,7 +26,10 @@
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build && npm run test"
+    "prepublishOnly": "npm run build && npm run test",
+    "postpublish": "npm run update-gui",
+    "update-gui": "node scripts/update-gui.js",
+    "release": "npm version patch && npm publish && git push --follow-tags"
   },
   "keywords": [
     "chess",

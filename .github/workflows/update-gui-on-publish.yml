@@ -1,0 +1,80 @@
+name: Update GUI on NPM Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update GUI to (leave empty for latest)'
+        required: false
+
+jobs:
+  update-gui:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GUI_UPDATE_TOKEN || github.token }}
+          submodules: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Get package version
+        id: package-version
+        run: |
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Updating GUI to use ban-chess.ts@$VERSION"
+      
+      - name: Update GUI submodule
+        run: |
+          cd gui
+          
+          # Update package.json to use the new version
+          npm install ban-chess.ts@${{ steps.package-version.outputs.version }} --save
+          
+          # Check if there are changes
+          if git diff --quiet package.json package-lock.json; then
+            echo "No changes needed - GUI already using version ${{ steps.package-version.outputs.version }}"
+            exit 0
+          fi
+          
+          # Commit changes in the submodule
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: Update ban-chess.ts to v${{ steps.package-version.outputs.version }}"
+          
+          # Push to the GUI repository
+          git push origin HEAD:main || git push origin HEAD:master
+      
+      - name: Update submodule reference
+        run: |
+          # Check if the submodule has changes
+          if git diff --quiet gui; then
+            echo "No submodule changes to commit"
+            exit 0
+          fi
+          
+          # Commit the submodule update
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add gui
+          git commit -m "chore: Update GUI submodule to use ban-chess.ts v${{ steps.package-version.outputs.version }}"
+          git push origin main || git push origin master
+      
+      - name: Trigger GUI deployment
+        run: |
+          # The GUI repo should have its own GitHub Pages workflow
+          # This will trigger automatically when we push to it
+          echo "GUI update complete. Deployment will trigger automatically."
