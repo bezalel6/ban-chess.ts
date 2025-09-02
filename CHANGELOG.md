@@ -5,6 +5,42 @@ All notable changes to ban-chess.ts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-09-02
+
+### Added
+- **Ply-Based API**: Complete redesign with clear ply progression
+  - `getPly()` - Current ply number (1-based)
+  - `getActivePlayer()` - Who acts at current ply
+  - `getActionType()` - What action type at current ply
+  - `getLegalActions()` - All legal actions at current ply
+- **Enhanced FEN Format**: 7th field now contains ply number and ban state
+  - Format: `{ply}[:{from}{to}]` (e.g., `1`, `2:e2e4`)
+- **Improved Game State Management**: Crystal clear action flow
+- **Version Display**: `BanChess.VERSION` static property
+
+### Changed
+- **BREAKING**: Complete API redesign focused on ply-based model
+- **BREAKING**: FEN format change - 7th field now uses ply-based format
+- **BREAKING**: Deprecated legacy methods (still supported but not recommended):
+  - `nextActionType()` → Use `getActionType()` instead
+  - `legalMoves()`/`legalBans()` → Use `getLegalActions()` instead
+  - `turn` property → Use `getActivePlayer()` instead
+- Game flow now follows strict ply pattern: 1=Black ban, 2=White move, 3=White ban, 4=Black move...
+
+### Migration Guide
+Replace legacy patterns:
+```typescript
+// OLD (v1.x-v2.x)
+if (game.nextActionType() === 'ban' && game.turn === 'black') {
+  const bans = game.legalBans();
+}
+
+// NEW (v3.0.0)
+if (game.getActionType() === 'ban' && game.getActivePlayer() === 'black') {
+  const actions = game.getLegalActions();
+}
+```
+
 ## [1.2.2] - 2025-08-29
 
 ### Fixed
@@ -87,6 +123,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Game history tracking
 - Reset functionality
 
+[3.0.0]: https://github.com/bezalel6/ban-chess.ts/compare/v1.2.2...v3.0.0
+[1.2.2]: https://github.com/bezalel6/ban-chess.ts/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/bezalel6/ban-chess.ts/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/bezalel6/ban-chess.ts/compare/v1.1.3...v1.2.0
 [1.1.3]: https://github.com/bezalel6/ban-chess.ts/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/bezalel6/ban-chess.ts/compare/v1.1.1...v1.1.2

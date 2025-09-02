@@ -4,7 +4,7 @@ This guide explains how to synchronize Ban Chess game state between multiple cli
 
 ## Overview
 
-Ban Chess provides a standardized serialization format for actions and state synchronization methods to enable efficient network communication between clients.
+Ban Chess provides a standardized serialization format for actions and state synchronization methods to enable efficient network communication between clients. The v3.0.0 ply-based API makes synchronization state clearer and more reliable.
 
 ## Serialized Action Format (BCN - Ban Chess Notation)
 
@@ -12,6 +12,7 @@ Each action in Ban Chess can be represented as a compact string:
 
 - **Ban**: `b:fromto` (e.g., `b:e2e4`)
 - **Move**: `m:fromto[promotion]` (e.g., `m:d2d4` or `m:e7e8q`)
+- **With indicators**: Game state indicators (+, #, =) can be included (configurable)
 
 This format is:
 - Compact (6-8 characters per action)
@@ -54,6 +55,8 @@ const game = new BanChess();
 const result = game.playSerializedAction('b:e2e4');
 if (result.success) {
   console.log('Action applied successfully');
+  // v3.0.0: Use ply-based API for clearer state tracking
+  console.log(`Now at ply ${game.getPly()}: ${game.getActivePlayer()} to ${game.getActionType()}`);
 }
 ```
 
