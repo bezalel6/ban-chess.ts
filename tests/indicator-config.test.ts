@@ -239,7 +239,7 @@ describe('Indicator Configuration', () => {
     
     it('should indicate check caused by bans', () => {
       // Setup a position where a ban exposes the king to check
-      const fenWithPotentialCheck = 'rnbqk1nr/pppp1ppp/4p3/8/1b1P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 3 b:ban';
+      const fenWithPotentialCheck = 'rnbqk1nr/pppp1ppp/4p3/8/1b1P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 3 3'; // Ply 3
       const game = new BanChess(fenWithPotentialCheck);
       
       // If Black bans a move that would block a check, it might expose White's king

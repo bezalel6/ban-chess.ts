@@ -39,8 +39,7 @@ export class BanChess {
   private chess: Chess;
   private _currentBannedMove: Ban | null = null;
   private _history: HistoryEntry[] = [];
-  private _turnNumber: number = 1;
-  private _isFirstMove: boolean = true;
+  private _ply: number = 1;
   private _indicatorConfig: IndicatorConfig = {
     pgn: true,
     serialization: true,
@@ -74,6 +73,53 @@ export class BanChess {
   }
   
   /**
+   * Gets the current ply number (1-based)
+   * @returns Current ply number
+   * @example
+   * ```typescript
+   * const game = new BanChess();
+   * console.log(game.getPly()); // 1 (first ply: Black bans)
+   * ```
+   */
+  getPly(): number {
+    return this._ply;
+  }
+
+  /**
+   * Gets the color of the player who performs the action at the current ply
+   * @returns 'white' or 'black'
+   * @example
+   * ```typescript
+   * const game = new BanChess();
+   * console.log(game.getActivePlayer()); // 'black' (ply 1: Black bans)
+   * ```
+   */
+  getActivePlayer(): Color {
+    // Ply pattern: 1=Black ban, 2=White move, 3=White ban, 4=Black move, 5=Black ban, 6=White move...
+    const plyInCycle = ((this._ply - 1) % 4) + 1; // Convert to 1-4 cycle
+    switch (plyInCycle) {
+      case 1: return 'black'; // Black bans
+      case 2: return 'white'; // White moves  
+      case 3: return 'white'; // White bans
+      case 4: return 'black'; // Black moves
+      default: return 'black';
+    }
+  }
+
+  /**
+   * Gets the type of action for the current ply
+   * @returns 'ban' for odd plies, 'move' for even plies
+   * @example
+   * ```typescript
+   * const game = new BanChess();
+   * console.log(game.getActionType()); // 'ban' (ply 1: restriction)
+   * ```
+   */
+  getActionType(): ActionType {
+    return this._ply % 2 === 1 ? 'ban' : 'move';
+  }
+
+  /**
    * Gets the color of the player who needs to perform the next action (ban or move)
    * @returns 'white' or 'black'
    * @example
@@ -81,17 +127,10 @@ export class BanChess {
    * const game = new BanChess();
    * console.log(game.turn); // 'black' (Black bans first)
    * ```
+   * @deprecated Use getActivePlayer() instead for clearer ply-based logic
    */
   get turn(): Color {
-    if (this._isFirstMove) {
-      return 'black';
-    }
-    
-    if (this.nextActionType() === 'ban') {
-      return this.chess.turn() === 'w' ? 'black' : 'white';
-    }
-    
-    return this.chess.turn() === 'w' ? 'white' : 'black';
+    return this.getActivePlayer();
   }
   
   /**
@@ -117,13 +156,10 @@ export class BanChess {
    * game.play({ ban: { from: 'e2', to: 'e4' } });
    * console.log(game.nextActionType()); // 'move' (after ban, a move is expected)
    * ```
+   * @deprecated Use getActionType() instead for clearer ply-based logic
    */
   nextActionType(): ActionType {
-    if (this._isFirstMove) {
-      return 'ban';
-    }
-    
-    return this._currentBannedMove ? 'move' : 'ban';
+    return this.getActionType();
   }
   
   /**
@@ -175,7 +211,7 @@ export class BanChess {
       };
     }
     
-    if (this.nextActionType() !== 'ban') {
+    if (this.getActionType() !== 'ban') {
       return {
         success: false,
         error: 'Expected a move, not a ban'
@@ -221,8 +257,8 @@ export class BanChess {
     }
     
     const historyEntry: HistoryEntry = {
-      turnNumber: this._turnNumber,
-      player: this.turn,
+      ply: this._ply,
+      player: this.getActivePlayer(),
       actionType: 'ban',
       action: ban,
       fen: this.fen(),
@@ -231,10 +267,7 @@ export class BanChess {
     };
     
     this._history.push(historyEntry);
-    
-    if (this._isFirstMove) {
-      this._isFirstMove = false;
-    }
+    this._ply++;
     
     return {
       success: true,
@@ -262,7 +295,7 @@ export class BanChess {
       };
     }
     
-    if (this.nextActionType() !== 'move') {
+    if (this.getActionType() !== 'move') {
       return {
         success: false,
         error: 'Expected a ban, not a move'
@@ -290,8 +323,8 @@ export class BanChess {
     }
     
     const historyEntry: HistoryEntry = {
-      turnNumber: this._turnNumber,
-      player: this.chess.turn() === 'w' ? 'black' : 'white',
+      ply: this._ply,
+      player: this.getActivePlayer(),
       actionType: 'move',
       action: move,
       san: result.san,
@@ -301,10 +334,7 @@ export class BanChess {
     
     this._history.push(historyEntry);
     this._currentBannedMove = null;
-    
-    if (this.chess.turn() === 'w') {
-      this._turnNumber++;
-    }
+    this._ply++;
     
     // Check game state after the move
     const isGameOver = this.chess.gameOver();
@@ -345,6 +375,27 @@ export class BanChess {
   }
   
   /**
+   * Gets all legal actions for the current ply (bans or moves)
+   * @returns Array of legal actions based on current ply type
+   * @example
+   * ```typescript
+   * const game = new BanChess();
+   * const actions = game.getLegalActions(); // Returns all possible bans for ply 1
+   * ```
+   */
+  getLegalActions(): Action[] {
+    if (this.gameOver()) {
+      return [];
+    }
+    
+    if (this.getActionType() === 'ban') {
+      return this.legalBans().map(ban => ({ ban }));
+    } else {
+      return this.legalMoves().map(move => ({ move }));
+    }
+  }
+
+  /**
    * Gets all legal moves in the current position (excluding banned moves)
    * @returns Array of legal moves, empty if it's time to ban or game is over
    * @example
@@ -353,6 +404,7 @@ export class BanChess {
    * const moves = game.legalMoves();
    * // Returns all White's opening moves except e2-e4
    * ```
+   * @deprecated Use getLegalActions() instead for unified action handling
    */
   legalMoves(): Move[] {
     // No moves if game is over
@@ -360,7 +412,7 @@ export class BanChess {
       return [];
     }
     
-    if (this.nextActionType() !== 'move') {
+    if (this.getActionType() !== 'move') {
       return [];
     }
     
@@ -387,6 +439,7 @@ export class BanChess {
    * const bans = game.legalBans();
    * // Returns all of White's possible opening moves
    * ```
+   * @deprecated Use getLegalActions() instead for unified action handling
    */
   legalBans(): Move[] {
     // No bans if game is over
@@ -394,21 +447,11 @@ export class BanChess {
       return [];
     }
     
-    if (this.nextActionType() !== 'ban') {
+    if (this.getActionType() !== 'ban') {
       return [];
     }
     
     const tempChess = new Chess(this.chess.fen());
-    
-    if (this._isFirstMove) {
-      const moves = tempChess.moves({ verbose: true });
-      return moves.map(m => ({
-        from: m.from as Square,
-        to: m.to as Square
-      }));
-    }
-    
-    tempChess.load(this.chess.fen());
     const moves = tempChess.moves({ verbose: true });
     
     const uniqueBans = new Map<string, Ban>();
@@ -537,29 +580,24 @@ export class BanChess {
   
   /**
    * Gets the current position as an extended FEN string
-   * @returns FEN string with 7th field for ban state (e.g., "b:e2e4" or "w:ban")
+   * @returns FEN string with 7th field for ply number and optional ban state
    * @example
    * ```typescript
    * const game = new BanChess();
    * game.play({ ban: { from: 'e2', to: 'e4' } });
    * console.log(game.fen());
-   * // "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 b:e2e4"
+   * // "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 2:e2e4"
    * ```
    */
   fen(): string {
     const baseFen = this.chess.fen();
-    let banState: string;
+    let plyState: string = this._ply.toString();
     
     if (this._currentBannedMove) {
-      banState = `b:${this._currentBannedMove.from}${this._currentBannedMove.to}`;
-    } else if (this.nextActionType() === 'ban') {
-      const banningPlayer = this.turn;
-      banState = `${banningPlayer.charAt(0)}:ban`;
-    } else {
-      banState = 'b:ban';
+      plyState += `:${this._currentBannedMove.from}${this._currentBannedMove.to}`;
     }
     
-    return `${baseFen} ${banState}`;
+    return `${baseFen} ${plyState}`;
   }
   
   /**
@@ -589,6 +627,17 @@ export class BanChess {
     
     for (let i = 0; i < this._history.length; i++) {
       const entry = this._history[i];
+      // Calculate move number based on ply
+      let moveNumber = 1;
+      if (entry.actionType === 'move') {
+        if (entry.player === 'white') {
+          // White moves: ply 2->move 1, ply 6->move 2, ply 10->move 3...
+          moveNumber = Math.floor((entry.ply - 2) / 4) + 1;
+        } else {
+          // Black moves: ply 4->move 1, ply 8->move 2, ply 12->move 3...  
+          moveNumber = Math.floor((entry.ply - 4) / 4) + 1;
+        }
+      }
       
       if (entry.actionType === 'ban') {
         const ban = entry.action as Ban;
@@ -606,7 +655,7 @@ export class BanChess {
         moveText += `{banning: ${banNotation}} `;
       } else {
         if (entry.player === 'white') {
-          moveText = `${currentTurn}. ${moveText}`;
+          moveText = `${moveNumber}. ${moveText}`;
         }
         
         // Respect PGN indicator configuration for moves
@@ -626,8 +675,9 @@ export class BanChess {
     }
     
     if (moveText) {
-      if (!moveText.startsWith(`${currentTurn}.`)) {
-        moveText = `${currentTurn}. ${moveText}`;
+      const lastMoveNumber = this._history.length > 0 ? Math.floor((this._history[this._history.length - 1].ply + 1) / 2) : 1;
+      if (!moveText.startsWith(`${lastMoveNumber}.`)) {
+        moveText = `${lastMoveNumber}. ${moveText}`;
       }
       pgn += moveText;
     }
@@ -684,8 +734,7 @@ export class BanChess {
     this.chess = new Chess();
     this._currentBannedMove = null;
     this._history = [];
-    this._turnNumber = 1;
-    this._isFirstMove = true;
+    this._ply = 1;
   }
   
   /**
@@ -715,8 +764,8 @@ export class BanChess {
       board += `\nBanned: ${this._currentBannedMove.from}-${this._currentBannedMove.to}`;
     }
     
-    // Add turn information
-    board += `\nNext: ${this.nextActionType()} by ${this.turn}`;
+    // Add ply information
+    board += `\nPly: ${this._ply} (${this.getActionType()} by ${this.getActivePlayer()})`;
     
     return board;
   }
@@ -840,7 +889,7 @@ export class BanChess {
     return {
       fen: this.fen(),
       lastAction: this.getLastActionSerialized() || undefined,
-      moveNumber: this._turnNumber
+      ply: this._ply
     };
   }
   
@@ -884,7 +933,7 @@ export class BanChess {
    */
   loadFromSyncState(syncState: SyncState): void {
     this.loadFromFEN(syncState.fen);
-    this._turnNumber = syncState.moveNumber;
+    this._ply = syncState.ply;
   }
   
   /**
@@ -966,7 +1015,7 @@ export class BanChess {
   
   /**
    * Loads a game position from an extended FEN string
-   * @param fen - FEN string with optional 7th field for ban state
+   * @param fen - FEN string with optional 7th field for ply number and ban state
    * @private
    */
   private loadFromFEN(fen: string): void {
@@ -978,21 +1027,36 @@ export class BanChess {
     }
     
     const baseFen = parts.slice(0, 6).join(' ');
-    const banState = parts[6];
+    const plyState = parts[6];
     
     this.chess = new Chess(baseFen);
     
-    if (banState && banState !== '-') {
-      if (banState.includes(':')) {
-        const [, value] = banState.split(':');
-        if (value === 'ban') {
-          this._isFirstMove = false;
-        } else if (value.length === 4) {
+    if (plyState && plyState !== '-') {
+      if (plyState.includes(':')) {
+        const [plyStr, banState] = plyState.split(':');
+        this._ply = parseInt(plyStr, 10) || 1;
+        
+        if (banState && banState.length === 4) {
           this._currentBannedMove = {
-            from: value.substring(0, 2) as Square,
-            to: value.substring(2, 4) as Square
+            from: banState.substring(0, 2) as Square,
+            to: banState.substring(2, 4) as Square
           };
-          this._isFirstMove = false;
+        }
+      } else {
+        // Legacy format or just ply number
+        const plyNum = parseInt(plyState, 10);
+        if (!isNaN(plyNum)) {
+          this._ply = plyNum;
+        }
+        // Support legacy ban state format for backward compatibility
+        else if (plyState.startsWith('b:') || plyState.startsWith('w:')) {
+          const [player, value] = plyState.split(':');
+          if (value !== 'ban' && value.length === 4) {
+            this._currentBannedMove = {
+              from: value.substring(0, 2) as Square,
+              to: value.substring(2, 4) as Square
+            };
+          }
         }
       }
     }

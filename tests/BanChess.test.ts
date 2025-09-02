@@ -101,7 +101,7 @@ describe('BanChess', () => {
     });
 
     it('should handle promotion bans correctly', () => {
-      const game = new BanChess('4k3/P7/8/8/8/8/8/4K3 b - - 0 1 b:ban');
+      const game = new BanChess('4k3/P7/8/8/8/8/8/4K3 b - - 0 1 1'); // Ply 1
       
       // Black bans a7-a8 (blocks ALL promotions)
       game.play({ ban: { from: 'a7', to: 'a8' } });
@@ -115,7 +115,7 @@ describe('BanChess', () => {
   describe('Checkmate', () => {
     it('should detect checkmate when only escape is banned', () => {
       // Test that checkmate is properly detected when no legal moves exist
-      const testGame = new BanChess('4k3/4Q3/4K3/8/8/8/8/8 b - - 0 1 w:ban');
+      const testGame = new BanChess('4k3/4Q3/4K3/8/8/8/8/8 b - - 0 1 3'); // Ply 3 - White's turn to ban
       
       // Black king is in check with limited escapes
       const bans = testGame.legalBans();
@@ -143,26 +143,26 @@ describe('BanChess', () => {
       
       // Initial position - Black to ban
       let fen = game.fen();
-      expect(fen).toContain('b:ban');
+      expect(fen).toContain('1'); // Ply 1
       
       // After Black bans
       game.play({ ban: { from: 'e2', to: 'e4' } });
       fen = game.fen();
-      expect(fen).toContain('b:e2e4');
+      expect(fen).toContain('2:e2e4'); // Ply 2 with banned move
       
       // After White moves
       game.play({ move: { from: 'd2', to: 'd4' } });
       fen = game.fen();
-      expect(fen).toContain('w:ban');
+      expect(fen).toContain('3'); // Ply 3, White's turn to ban
     });
 
     it('should load from extended FEN', () => {
-      const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 b:e2e4';
+      const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 2:e2e4'; // Ply 2 with banned move
       const game = new BanChess(fen);
       
       expect(game.currentBannedMove).toEqual({ from: 'e2', to: 'e4' });
-      expect(game.nextActionType()).toBe('move');
-      expect(game.turn).toBe('white');
+      expect(game.getActionType()).toBe('move');
+      expect(game.getActivePlayer()).toBe('white');
       
       // e2-e4 should be banned
       const moves = game.legalMoves();
@@ -207,14 +207,14 @@ describe('BanChess', () => {
       expect(history.length).toBe(2);
       
       expect(history[0]).toMatchObject({
-        turnNumber: 1,
+        ply: 1,
         player: 'black',
         actionType: 'ban',
         action: { from: 'e2', to: 'e4' }
       });
       
       expect(history[1]).toMatchObject({
-        turnNumber: 1,
+        ply: 2, // White move is on ply 2
         player: 'white',
         actionType: 'move',
         action: { from: 'd2', to: 'd4' },

@@ -4,7 +4,7 @@ describe('Chess Pattern Compliance', () => {
   describe('Draw detection', () => {
     it('should detect draws by insufficient material', () => {
       // King vs King position
-      const fen = '8/8/8/4k3/8/3K4/8/8 w - - 0 1 b:ban';
+      const fen = '8/8/8/4k3/8/3K4/8/8 w - - 0 1 1'; // Ply 1
       const game = new BanChess(fen);
       
       expect(game.insufficientMaterial()).toBe(true);
@@ -54,7 +54,7 @@ describe('Chess Pattern Compliance', () => {
     
     it('should handle en passant notation', () => {
       // En passant scenario - with ban state
-      const fenBeforeEp = 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1 b:ban';
+      const fenBeforeEp = 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1 1'; // Ply 1
       const game = new BanChess(fenBeforeEp);
       
       // Black bans a White move (not the en passant)
@@ -67,7 +67,7 @@ describe('Chess Pattern Compliance', () => {
     
     it('should handle promotion notation', () => {
       // Pawn ready to promote - with ban state
-      const promotionFen = 'rnbqkbnr/pppppP1p/8/8/8/8/PPPPP1PP/RNBQKBNR w KQkq - 0 1 b:ban';
+      const promotionFen = 'rnbqkbnr/pppppP1p/8/8/8/8/PPPPP1PP/RNBQKBNR w KQkq - 0 1 1'; // Ply 1
       const game = new BanChess(promotionFen);
       
       // Black bans a White move (not the promotion)
@@ -102,7 +102,7 @@ describe('Chess Pattern Compliance', () => {
     it('should handle disambiguation notation', () => {
       // Position where two WHITE knights can move to same square (e4)
       // Knights on c3 and g3 can both reach e4
-      const disambigFen = 'rnbqkbnr/pppppppp/8/8/8/2N3N1/PPPPPPPP/R1BQKB1R w KQkq - 0 1 b:ban';
+      const disambigFen = 'rnbqkbnr/pppppppp/8/8/8/2N3N1/PPPPPPPP/R1BQKB1R w KQkq - 0 1 1'; // Ply 1
       const game = new BanChess(disambigFen);
       
       // Black bans a White move (not the knight move)
@@ -125,7 +125,7 @@ describe('Chess Pattern Compliance', () => {
       
       expect(ascii).toContain('r  n  b  q  k  b  n  r');
       expect(ascii).toContain('P  P  P  P  P  P  P  P');
-      expect(ascii).toContain('Next: ban by black');
+      expect(ascii).toContain('Ply: 1 (ban by black)');
     });
     
     it('should show banned move in ASCII', () => {
@@ -134,7 +134,7 @@ describe('Chess Pattern Compliance', () => {
       
       const ascii = game.ascii();
       expect(ascii).toContain('Banned: e2-e4');
-      expect(ascii).toContain('Next: move by white');
+      expect(ascii).toContain('Ply: 2 (move by white)');
     });
   });
 });

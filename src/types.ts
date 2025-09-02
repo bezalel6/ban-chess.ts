@@ -29,7 +29,7 @@ export interface ActionResult {
 }
 
 export interface HistoryEntry {
-  turnNumber: number;
+  ply: number;
   player: 'white' | 'black';
   actionType: 'ban' | 'move';
   action: Ban | Move;
@@ -47,7 +47,7 @@ export type SerializedAction = string; // Format: "b:e2e4" for ban, "m:e2e4" for
 export interface SyncState {
   fen: string;
   lastAction?: SerializedAction;
-  moveNumber: number;
+  ply: number;
 }
 
 export interface IndicatorConfig {

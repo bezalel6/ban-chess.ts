@@ -67,7 +67,7 @@ describe('Game Ending Edge Cases', () => {
     
     it('should properly detect checkmate from regular moves', () => {
       // Back rank mate scenario
-      const backRankFen = 'r5k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1 b:ban';
+      const backRankFen = 'r5k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1 1'; // Ply 1
       const game = new BanChess(backRankFen);
       
       // Black bans something random
@@ -110,7 +110,7 @@ describe('Game Ending Edge Cases', () => {
     
     it('should handle draw by insufficient material after a move', () => {
       // Position where capturing leaves insufficient material
-      const almostDrawFen = '8/8/8/4k3/8/3K4/8/7R w - - 0 1 b:ban';
+      const almostDrawFen = '8/8/8/4k3/8/3K4/8/7R w - - 0 1 1'; // Ply 1
       const game = new BanChess(almostDrawFen);
       
       // Black bans something

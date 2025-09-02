@@ -11,5 +11,6 @@ export type {
   File,
   Rank,
   SerializedAction,
-  SyncState
+  SyncState,
+  IndicatorConfig
 } from './types.js';

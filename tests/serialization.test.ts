@@ -68,9 +68,9 @@ describe('Serialization', () => {
       game.play({ move: { from: 'd2', to: 'd4' } });
 
       const syncState = game.getSyncState();
-      expect(syncState.fen).toContain('w:ban'); // White's turn to ban
+      expect(syncState.fen).toContain('3'); // Ply 3 (White's turn to ban)
       expect(syncState.lastAction).toBe('m:d2d4');
-      expect(syncState.moveNumber).toBe(1);
+      expect(syncState.ply).toBe(3);
     });
 
     it('should load from sync state correctly', () => {
@@ -136,8 +136,8 @@ describe('Serialization', () => {
       const game = BanChess.replayFromActions(actions);
       
       expect(game.getActionHistory()).toEqual(actions);
-      expect(game.nextActionType()).toBe('ban');
-      expect(game.turn).toBe('black');
+      expect(game.getActionType()).toBe('ban');
+      expect(game.getActivePlayer()).toBe('black');
     });
 
     it('should throw error when replay fails', () => {
@@ -151,7 +151,7 @@ describe('Serialization', () => {
     });
 
     it('should replay from a custom starting position', () => {
-      const customFen = 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1 w:ban';
+      const customFen = 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1 3'; // Ply 3, White's turn to ban
       const actions: SerializedAction[] = [
         'b:e7e5',
         'm:d7d5'
@@ -160,7 +160,7 @@ describe('Serialization', () => {
       const game = BanChess.replayFromActions(actions, customFen);
       
       expect(game.getActionHistory()).toEqual(actions);
-      expect(game.turn).toBe('black');
+      expect(game.getActivePlayer()).toBe('black'); // After 2 actions from ply 3, we're on ply 5 (black bans)
     });
   });
 
