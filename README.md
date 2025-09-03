@@ -125,6 +125,9 @@ class BanChess {
   getActionType(): 'ban' | 'move';         // What action type at current ply
   getLegalActions(): Action[];             // All legal actions at current ply
   
+  // NEW - Unified action log format
+  getActionLog(): string[];                // Returns ["b:e2e4", "d4", "b:e7e5", "Nf3", ...]
+  
   // Legacy methods (deprecated but still supported)
   nextActionType(): 'ban' | 'move';        // Use getActionType() instead
   legalMoves(): Move[];                    // Use getLegalActions() instead
@@ -186,6 +189,27 @@ interface IndicatorConfig {
   san?: boolean;          // Include indicators in SAN notation (default: true)
 }
 ```
+
+## Action Log Format (NEW)
+
+Ban Chess now provides a unified action log that combines bans and moves in a single chronological array. This action-first approach simplifies game replay and analysis.
+
+### Unified Action Log
+
+```typescript
+const actionLog = game.getActionLog();
+// Returns: ["b:e2e4", "d4", "b:e7e5", "d5", "b:g1f3", "Nf3", "b:h7h6", "Qh4#"]
+```
+
+- **Bans**: Use `b:fromto` format (e.g., `b:e2e4`, `b:g1f3#`)
+- **Moves**: Use SAN (Standard Algebraic Notation) with indicators
+  - Pawn moves: `e4`, `d5`, `exd5` (capture)
+  - Piece moves: `Nf3`, `Bb5`, `Qh4#`
+  - Castling: `O-O` (kingside), `O-O-O` (queenside)
+  - Promotion: `e8=Q`, `h1=N`
+  - Indicators: `+` (check), `#` (checkmate), `=` (stalemate)
+
+This format provides a clean, readable game history that matches standard chess notation for moves while clearly marking bans.
 
 ## Serialization & Network Synchronization (v1.2.0+)
 

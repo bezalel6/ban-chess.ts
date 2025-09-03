@@ -19,8 +19,8 @@ describe('Game Ending Edge Cases', () => {
       
       expect(mateResult.success).toBe(true);
       expect(mateResult.san).toBe('Qh4#');
-      expect(mateResult.checkmate).toBe(true);
-      expect(mateResult.gameOver).toBe(true);
+      expect(mateResult.flags?.checkmate).toBe(true);
+      expect(mateResult.flags?.gameOver).toBe(true);
       
       // Game should be over - no more actions allowed
       expect(game.gameOver()).toBe(true);
@@ -77,8 +77,8 @@ describe('Game Ending Edge Cases', () => {
       const mateMove = game.play({ move: { from: 'a1', to: 'a8' } });
       
       expect(mateMove.san).toContain('#');
-      expect(mateMove.checkmate).toBe(true);
-      expect(mateMove.gameOver).toBe(true);
+      expect(mateMove.flags?.checkmate).toBe(true);
+      expect(mateMove.flags?.gameOver).toBe(true);
       
       // Game is over - no more actions
       expect(game.gameOver()).toBe(true);

@@ -4,10 +4,12 @@ import type {
   Ban,
   Action,
   ActionResult,
+  GameFlags,
   HistoryEntry,
-  Color,
+  Player,
   ActionType,
   Square,
+  Promotion,
   SerializedAction,
   SyncState,
   IndicatorConfig
@@ -94,7 +96,7 @@ export class BanChess {
    * console.log(game.getActivePlayer()); // 'black' (ply 1: Black bans)
    * ```
    */
-  getActivePlayer(): Color {
+  getActivePlayer(): Player {
     // Ply pattern: 1=Black ban, 2=White move, 3=White ban, 4=Black move, 5=Black ban, 6=White move...
     const plyInCycle = ((this._ply - 1) % 4) + 1; // Convert to 1-4 cycle
     switch (plyInCycle) {
@@ -129,7 +131,7 @@ export class BanChess {
    * ```
    * @deprecated Use getActivePlayer() instead for clearer ply-based logic
    */
-  get turn(): Color {
+  get turn(): Player {
     return this.getActivePlayer();
   }
   
@@ -164,21 +166,51 @@ export class BanChess {
   
   /**
    * Plays an action (either a ban or a move) in the game
-   * @param action - The action to play (ban or move)
-   * @returns Result object indicating success/failure and game state
+   * 
+   * @param action - The action to play: `{ ban: Ban }` or `{ move: Move }`
+   * 
+   * @returns {ActionResult} Comprehensive result with game state:
+   * 
+   * @returns.success - `true` if action was valid and executed
+   * @returns.action - The action that was played
+   * @returns.san - Standard Algebraic Notation with indicators (+, #, =)
+   * @returns.newFen - Resulting position in extended FEN format
+   * @returns.error - Error message if action failed
+   * @returns.flags - Game state flags:
+   *   - `check`: King is in check
+   *   - `checkmate`: Game ended in checkmate  
+   *   - `stalemate`: Game ended in stalemate
+   *   - `draw`: Game is a draw (50-move, repetition, insufficient material)
+   *   - `gameOver`: Game has ended for any reason
+   *   - `insufficientMaterial`: Draw by insufficient material
+   *   - `threefoldRepetition`: Draw by repetition
+   *   - `fiftyMoveRule`: Draw by 50-move rule
+   *   - `banCausedCheckmate`: Ban removed only escape from check
+   *   - `banCausedStalemate`: Ban removed only legal move
+   * 
    * @example
    * ```typescript
-   * // Ban a move
+   * // Ban a move (Black starts by banning)
    * const banResult = game.play({ ban: { from: 'e2', to: 'e4' } });
-   * if (banResult.success) {
-   *   console.log('Ban successful');
-   * }
+   * console.log('Banned:', banResult.san); // 'e2e4'
+   * console.log('Flags:', banResult.flags); 
+   * // { gameOver: false, check: false, ... }
    * 
-   * // Make a move
+   * // Make a move  
    * const moveResult = game.play({ move: { from: 'd2', to: 'd4' } });
-   * if (moveResult.success) {
-   *   console.log('Move played:', moveResult.san); // 'd4'
-   * }
+   * console.log('Move:', moveResult.san); // 'd4'
+   * console.log('In check?', moveResult.flags?.check); // false
+   * 
+   * // Checkmate example
+   * const mateResult = game.play({ move: { from: 'd8', to: 'h4' } });
+   * console.log('Move:', mateResult.san); // 'Qh4#'
+   * console.log('Checkmate?', mateResult.flags?.checkmate); // true
+   * console.log('Game over?', mateResult.flags?.gameOver); // true
+   * 
+   * // Ban causing checkmate (removes only escape)
+   * const banMate = game.play({ ban: { from: 'g1', to: 'h1' } });
+   * console.log('Ban:', banMate.san); // 'g1h1#'
+   * console.log('Ban caused checkmate?', banMate.flags?.banCausedCheckmate); // true
    * ```
    */
   play(action: Action): ActionResult {
@@ -242,6 +274,17 @@ export class BanChess {
     
     const willCauseCheckmate = movesAfterBan.length === 0 && tempChess.inCheck();
     const willCauseStalemate = movesAfterBan.length === 0 && !tempChess.inCheck();
+    const stillInCheck = tempChess.inCheck() && movesAfterBan.length > 0;
+    
+    // Create flags for the ban
+    const flags: GameFlags = {
+      check: stillInCheck,
+      checkmate: willCauseCheckmate,
+      stalemate: willCauseStalemate,
+      gameOver: willCauseCheckmate || willCauseStalemate,
+      banCausedCheckmate: willCauseCheckmate,
+      banCausedStalemate: willCauseStalemate
+    };
     
     // Add indicator to the ban if it causes game over
     let banNotation = `${ban.from}${ban.to}`;
@@ -250,8 +293,7 @@ export class BanChess {
         banNotation += '#';
       } else if (willCauseStalemate) {
         banNotation += '=';
-      } else if (tempChess.inCheck()) {
-        // Check if player is still in check after the ban
+      } else if (stillInCheck) {
         banNotation += '+';
       }
     }
@@ -263,7 +305,8 @@ export class BanChess {
       action: ban,
       fen: this.fen(),
       bannedMove: ban,
-      san: banNotation  // Store the ban notation with indicators
+      san: banNotation,  // Store the ban notation with indicators
+      flags: flags
     };
     
     this._history.push(historyEntry);
@@ -274,9 +317,7 @@ export class BanChess {
       action: { ban },
       san: this._indicatorConfig.san ? banNotation : `${ban.from}${ban.to}`,
       newFen: this.fen(),
-      gameOver: willCauseCheckmate || willCauseStalemate,
-      checkmate: willCauseCheckmate,
-      stalemate: willCauseStalemate
+      flags: flags
     };
   }
   
@@ -322,6 +363,18 @@ export class BanChess {
       };
     }
     
+    // Create comprehensive game flags after the move
+    const flags: GameFlags = {
+      check: this.chess.inCheck(),
+      checkmate: this.chess.inCheckmate(),
+      stalemate: this.chess.inStalemate(),
+      draw: this.chess.inDraw(),
+      gameOver: this.chess.gameOver(),
+      insufficientMaterial: this.chess.insufficientMaterial(),
+      threefoldRepetition: this.chess.inThreefoldRepetition(),
+      fiftyMoveRule: this.chess.inDraw() && !this.chess.inStalemate() && !this.chess.insufficientMaterial()
+    };
+    
     const historyEntry: HistoryEntry = {
       ply: this._ply,
       player: this.getActivePlayer(),
@@ -329,17 +382,13 @@ export class BanChess {
       action: move,
       san: result.san,
       fen: this.fen(),
-      bannedMove: this._currentBannedMove
+      bannedMove: this._currentBannedMove,
+      flags: flags
     };
     
     this._history.push(historyEntry);
     this._currentBannedMove = null;
     this._ply++;
-    
-    // Check game state after the move
-    const isGameOver = this.chess.gameOver();
-    const isCheckmate = this.chess.inCheckmate();
-    const isStalemate = this.chess.inStalemate();
     
     // Respect SAN indicator configuration
     let san = result.san;
@@ -353,9 +402,7 @@ export class BanChess {
       action: { move },
       san: san,
       newFen: this.fen(),
-      gameOver: isGameOver,
-      checkmate: isCheckmate,
-      stalemate: isStalemate
+      flags: flags
     };
   }
   
@@ -539,7 +586,7 @@ export class BanChess {
    * @returns The color of the current player
    * @deprecated Use the `turn` getter instead
    */
-  currentPlayer(): Color {
+  currentPlayer(): Player {
     return this.turn;
   }
   
@@ -574,7 +621,7 @@ export class BanChess {
    * console.log(game.nextMoveColor()); // 'white'
    * ```
    */
-  nextMoveColor(): Color {
+  nextMoveColor(): Player {
     return this.chess.turn() === 'w' ? 'white' : 'black';
   }
   
@@ -831,10 +878,9 @@ export class BanChess {
     if (type === 'b') {
       return { ban: { from: from as Square, to: to as Square } };
     } else {
-      const move: Move = { from: from as Square, to: to as Square };
-      if (promotion) {
-        move.promotion = promotion as 'q' | 'r' | 'b' | 'n';
-      }
+      const move: Move = promotion 
+        ? { from: from as Square, to: to as Square, promotion: promotion as Promotion }
+        : { from: from as Square, to: to as Square };
       return { move };
     }
   }
@@ -934,6 +980,40 @@ export class BanChess {
   loadFromSyncState(syncState: SyncState): void {
     this.loadFromFEN(syncState.fen);
     this._ply = syncState.ply;
+  }
+  
+  /**
+   * Get a unified action log with both bans and moves in a single array
+   * Bans use "b:fromto" format, moves use SAN notation with indicators
+   * @returns Array of actions in chronological order
+   * @example
+   * ```typescript
+   * const log = game.getActionLog();
+   * // ["b:e2e4", "d4", "b:e7e5", "d5", "b:d2d4", "Nf3", "b:h7h6", "Qh4#"]
+   * ```
+   */
+  getActionLog(): string[] {
+    return this._history.map((entry) => {
+      if (entry.actionType === 'ban') {
+        // Bans use b:fromto format with indicators
+        const ban = entry.action as Ban;
+        let banNotation = `b:${ban.from}${ban.to}`;
+        
+        // Add indicator if present in stored san
+        if (entry.san && this._indicatorConfig.serialization) {
+          const match = entry.san.match(/[+#=]$/);
+          if (match) {
+            banNotation += match[0];
+          }
+        }
+        
+        return banNotation;
+      } else {
+        // Moves use SAN notation (algebraic notation)
+        // The san field already contains the proper notation with indicators
+        return entry.san || `${entry.action.from}${entry.action.to}`;
+      }
+    });
   }
   
   /**
