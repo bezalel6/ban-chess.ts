@@ -53,6 +53,18 @@ export interface ActionResult {
   readonly error?: string;
   readonly newFen?: string;
   readonly flags?: GameFlags;
+  
+  // Deprecated properties for backwards compatibility
+  /** @deprecated Use `flags?.check` instead */
+  readonly check?: boolean;
+  /** @deprecated Use `flags?.checkmate` instead */
+  readonly checkmate?: boolean;
+  /** @deprecated Use `flags?.stalemate` instead */
+  readonly stalemate?: boolean;
+  /** @deprecated Use `flags?.gameOver` instead */
+  readonly gameOver?: boolean;
+  /** @deprecated Use `flags?.draw` instead */
+  readonly draw?: boolean;
 }
 
 /** History entry tracking game progression */

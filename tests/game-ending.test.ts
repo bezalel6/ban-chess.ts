@@ -103,9 +103,9 @@ describe('Game Ending Edge Cases', () => {
       const result = game.play({ move: { from: 'd8', to: 'h4' } });
       
       // The move result should indicate game over
-      expect(result.gameOver).toBe(true);
-      expect(result.checkmate).toBe(true);
-      expect(result.stalemate).toBe(false);
+      expect(result.flags?.gameOver).toBe(true);
+      expect(result.flags?.checkmate).toBe(true);
+      expect(result.flags?.stalemate).toBe(false);
     });
     
     it('should handle draw by insufficient material after a move', () => {

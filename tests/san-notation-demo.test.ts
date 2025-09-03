@@ -94,7 +94,7 @@ describe('Complete SAN Notation with Indicators Demo', () => {
     // Verify the checkmate indicator
     expect(checkmateMove.san).toBe('Qh4#');
     expect(checkmateMove.san).toContain('#');
-    expect(checkmateMove.checkmate).toBe(true);
+    expect(checkmateMove.flags?.checkmate).toBe(true);
     
     const pgn = game.pgn();
     console.log('Complete game PGN:');
@@ -162,7 +162,7 @@ describe('Complete SAN Notation with Indicators Demo', () => {
     ];
     
     examples.forEach(({ action, indicator, expected }) => {
-      const serialized = BanChess.serializeAction(action as any, indicator);
+      const serialized = BanChess.serializeAction(action as any, indicator as any);
       console.log(`${JSON.stringify(action)} with '${indicator || 'none'}' → ${serialized}`);
       expect(serialized).toBe(expected);
     });

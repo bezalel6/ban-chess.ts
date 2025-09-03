@@ -317,7 +317,13 @@ export class BanChess {
       action: { ban },
       san: this._indicatorConfig.san ? banNotation : `${ban.from}${ban.to}`,
       newFen: this.fen(),
-      flags: flags
+      flags: flags,
+      // Deprecated properties for backwards compatibility
+      check: flags.check,
+      checkmate: flags.checkmate,
+      stalemate: flags.stalemate,
+      gameOver: flags.gameOver,
+      draw: flags.draw
     };
   }
   
@@ -402,7 +408,13 @@ export class BanChess {
       action: { move },
       san: san,
       newFen: this.fen(),
-      flags: flags
+      flags: flags,
+      // Deprecated properties for backwards compatibility
+      check: flags.check,
+      checkmate: flags.checkmate,
+      stalemate: flags.stalemate,
+      gameOver: flags.gameOver,
+      draw: flags.draw
     };
   }
   

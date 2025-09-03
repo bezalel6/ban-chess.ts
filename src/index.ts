@@ -14,5 +14,17 @@ export type {
   Promotion,
   SerializedAction,
   SyncState,
-  IndicatorConfig
+  IndicatorConfig,
+  BanChessNotation,
+  BanChessFEN
 } from './types.js';
+
+// Compatibility helpers for migration
+export {
+  hasGameFlags,
+  isUsingDeprecatedAPI,
+  getGameState,
+  migrateActionResult,
+  isCheckmate,
+  isGameOver
+} from './compatibility.js';
