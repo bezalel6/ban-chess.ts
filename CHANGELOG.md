@@ -5,6 +5,26 @@ All notable changes to ban-chess.ts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-01-04
+
+### Added
+- **Enhanced FEN Format with Game State Indicators**: The extended FEN format now includes PGN-style indicators for game state
+  - Check indicator (`+`) appended when king is in check
+  - Checkmate indicator (`#`) appended when game ends in checkmate
+  - Stalemate/Draw indicator (`=`) appended for stalemate or draw positions
+  - Format: `[standard FEN] [ply[:ban][indicator]]`
+  - Examples:
+    - Check: `rnb1kbnr/pppp1ppp/4p3/8/5PPq/8/PPPPP2P/RNBQKBNR w KQkq - 1 3 9+`
+    - Checkmate: `rnb1kbnr/pppp1ppp/4p3/8/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3 9#`
+    - Stalemate: `7k/5Q2/8/8/8/8/8/K7 b - - 0 1 5=`
+- **Automatic State Detection**: FEN strings now automatically include appropriate indicators based on current game state
+- **Backwards Compatible Parsing**: FEN parser handles both new format with indicators and legacy format without
+
+### Changed
+- FEN type definitions updated to document the new indicator format
+- `fen()` method now appends PGN indicators when applicable
+- `loadFromFEN()` method extracts and handles PGN indicators
+
 ## [1.2.2] - 2025-08-29
 
 ### Fixed

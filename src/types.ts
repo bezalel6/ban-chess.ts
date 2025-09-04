@@ -99,20 +99,32 @@ export type FENEnPassant = Square | '-';
 /** Ban Chess extended FEN field 7 - ply with optional ban */
 export type BanChessPlyField = `${number}` | `${number}:${Square}${Square}`;
 
+/** Ban Chess extended FEN field 8 - PGN-style indicator */
+export type BanChessIndicatorField = '' | '+' | '#' | '=';
+
 /**
  * Extended FEN for Ban Chess.
- * Standard chess FEN (6 fields) + 7th field for ban state.
+ * Standard chess FEN (6 fields) + 7th field for ban state + 8th field for PGN indicator.
  * 
- * Format: `${board} ${turn} ${castling} ${enPassant} ${halfMove} ${fullMove} ${ply}[:ban]`
+ * Format: `${board} ${turn} ${castling} ${enPassant} ${halfMove} ${fullMove} ${ply}[:ban][indicator]`
  * 
  * The 7th field contains:
  * - Just ply number when no ban is active: "1", "2", "3"
  * - Ply with ban when ban is active: "2:e2e4", "4:d7d5"
+ * - Optional PGN indicator appended directly: "9+", "10#", "11=", "2:e2e4#"
+ * 
+ * PGN indicators (appended to 7th field):
+ * - "+" = Check
+ * - "#" = Checkmate
+ * - "=" = Stalemate/Draw
  * 
  * @example Standard opening position: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 1"
  * @example After Black bans e2e4: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 2:e2e4"
+ * @example Position with check: "rnb1kbnr/pppp1ppp/4p3/8/5PP1/8/PPPPP2P/RNBQKBNR w KQkq - 0 3 6+"
+ * @example Checkmate position: "8/8/8/8/8/7k/6q1/7K w - - 0 1 10#"
+ * @example Ban causing checkmate: "8/8/8/8/8/7k/6q1/7K w - - 0 1 10:h1g1#"
  */
-export type BanChessFEN = string;  // Extended FEN string with 7th field
+export type BanChessFEN = string;  // Extended FEN string with 7th field including optional indicator
 
 /** Synchronization state for network play */
 export interface SyncState {

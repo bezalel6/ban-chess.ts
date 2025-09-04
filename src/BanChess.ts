@@ -638,14 +638,58 @@ export class BanChess {
   }
   
   /**
+   * Gets PGN-style indicator for current game state
+   * @private
+   */
+  private getGameIndicator(): string {
+    const gameFlags = this.getGameFlags();
+    
+    if (gameFlags.checkmate) return '#';
+    if (gameFlags.stalemate || gameFlags.draw) return '=';
+    if (gameFlags.check) return '+';
+    
+    return '';
+  }
+  
+  /**
+   * Gets current game state flags
+   * @returns Current game state flags
+   */
+  private getGameFlags(): GameFlags {
+    // Check if the last history entry was a ban that caused checkmate/stalemate
+    const lastEntry = this._history[this._history.length - 1];
+    const banCausedCheckmate = lastEntry?.flags?.banCausedCheckmate || false;
+    const banCausedStalemate = lastEntry?.flags?.banCausedStalemate || false;
+    
+    return {
+      check: this.chess.inCheck(),
+      checkmate: this.chess.inCheckmate(),
+      stalemate: this.chess.inStalemate(),
+      draw: this.chess.inDraw(),
+      gameOver: this.chess.gameOver(),
+      insufficientMaterial: this.chess.insufficientMaterial(),
+      threefoldRepetition: this.chess.inThreefoldRepetition(),
+      fiftyMoveRule: this.chess.inDraw() && !this.chess.inStalemate() && !this.chess.insufficientMaterial() && !this.chess.inThreefoldRepetition(),
+      banCausedCheckmate,
+      banCausedStalemate
+    };
+  }
+  
+  /**
    * Gets the current position as an extended FEN string
-   * @returns FEN string with 7th field for ply number and optional ban state
+   * @returns FEN string with 7th field for ply/ban state with optional PGN indicator
    * @example
    * ```typescript
    * const game = new BanChess();
    * game.play({ ban: { from: 'e2', to: 'e4' } });
    * console.log(game.fen());
    * // "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 2:e2e4"
+   * 
+   * // Position with check
+   * // "rnb1kbnr/pppp1ppp/4p3/8/5PP1/8/PPPPP2P/RNBQKBNR w KQkq - 0 3 6+"
+   * 
+   * // Checkmate position
+   * // "8/8/8/8/8/7k/6q1/7K w - - 0 1 10#"
    * ```
    */
   fen(): string {
@@ -655,6 +699,10 @@ export class BanChess {
     if (this._currentBannedMove) {
       plyState += `:${this._currentBannedMove.from}${this._currentBannedMove.to}`;
     }
+    
+    // Append PGN indicator if present
+    const indicator = this.getGameIndicator();
+    plyState += indicator;
     
     return `${baseFen} ${plyState}`;
   }
@@ -1119,16 +1167,25 @@ export class BanChess {
     }
     
     const baseFen = parts.slice(0, 6).join(' ');
-    const plyState = parts[6];
+    let plyState = parts[6];
     
     this.chess = new Chess(baseFen);
     
+    // Extract PGN indicator if present
+    let indicator = '';
     if (plyState && plyState !== '-') {
+      // Check if the plyState ends with a PGN indicator
+      const lastChar = plyState[plyState.length - 1];
+      if (lastChar === '+' || lastChar === '#' || lastChar === '=') {
+        indicator = lastChar;
+        plyState = plyState.slice(0, -1); // Remove indicator from plyState
+      }
+      
       if (plyState.includes(':')) {
         const [plyStr, banState] = plyState.split(':');
         this._ply = parseInt(plyStr, 10) || 1;
         
-        if (banState && banState.length === 4) {
+        if (banState && banState.length >= 4) {
           this._currentBannedMove = {
             from: banState.substring(0, 2) as Square,
             to: banState.substring(2, 4) as Square
@@ -1152,6 +1209,9 @@ export class BanChess {
         }
       }
     }
+    
+    // Note: The indicator represents the current game state but doesn't need to be stored
+    // The actual game state is determined by the chess.ts position
   }
   
   /**
