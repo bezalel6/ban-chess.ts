@@ -700,9 +700,19 @@ export class BanChess {
       plyState += `:${this._currentBannedMove.from}${this._currentBannedMove.to}`;
     }
     
-    // Append PGN indicator if present
-    const indicator = this.getGameIndicator();
-    plyState += indicator;
+    // For FEN, check if the last action was a ban that added an indicator
+    const lastEntry = this._history[this._history.length - 1];
+    if (lastEntry && lastEntry.actionType === 'ban' && lastEntry.san) {
+      // Use the indicator from when the ban was played
+      const match = lastEntry.san.match(/[+#=]$/);
+      if (match) {
+        plyState += match[0];
+      }
+    } else {
+      // For moves or no history, use current game state
+      const indicator = this.getGameIndicator();
+      plyState += indicator;
+    }
     
     return `${baseFen} ${plyState}`;
   }
@@ -846,33 +856,92 @@ export class BanChess {
   
   /**
    * Returns an ASCII representation of the current board position
-   * Shows the banned move with brackets if applicable
+   * Shows the banned move with brackets around the affected squares
    * @returns ASCII string representation of the board
    * @example
    * ```typescript
    * console.log(game.ascii());
+   * // After banning e2-e4:
    * // +------------------------+
    * // | r  n  b  q  k  b  n  r |
    * // | p  p  p  p  p  p  p  p |
    * // | .  .  .  .  .  .  .  . |
+   * // | .  .  .  . [.] .  .  . |  ← e4 is banned destination
    * // | .  .  .  .  .  .  .  . |
    * // | .  .  .  .  .  .  .  . |
-   * // | .  .  .  .  .  .  .  . |
-   * // | P  P  P  P  P  P  P  P |
+   * // | P  P  P  P [P] P  P  P |  ← e2 is banned source
    * // | R  N  B  Q  K  B  N  R |
    * // +------------------------+
+   * // Banned: e2→e4
    * ```
    */
   ascii(): string {
-    let board = this.chess.ascii();
+    // Get the base board from chess.ts
+    let boardLines = this.chess.ascii().split('\n');
     
-    // Add ban information if there's a current ban
+    // If there's a banned move, mark it on the board
     if (this._currentBannedMove) {
-      board += `\nBanned: ${this._currentBannedMove.from}-${this._currentBannedMove.to}`;
+      const from = this._currentBannedMove.from;
+      const to = this._currentBannedMove.to;
+      
+      // Convert algebraic notation to board coordinates
+      // Files: a-h map to columns 0-7
+      // Ranks: 1-8 map to rows 7-0 (rank 8 is row 0, rank 1 is row 7)
+      const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+      const fromRank = 8 - parseInt(from[1]);
+      const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+      const toRank = 8 - parseInt(to[1]);
+      
+      // Board lines structure:
+      // Line 0: +------------------------+
+      // Line 1-8: | piece  piece  piece ... | (8 ranks from 8 to 1)
+      // Line 9: +------------------------+
+      
+      // Helper to mark a square in the board string
+      const markSquare = (lineIndex: number, fileIndex: number) => {
+        // Line format: "N | piece  piece  piece..." where N is rank number
+        // After "| " (at position 4), pieces are at positions: 4, 7, 10, 13, 16, 19, 22, 25
+        // So piece position = 4 + (fileIndex * 3)
+        const piecePos = 4 + (fileIndex * 3);
+        const line = boardLines[lineIndex];
+        
+        if (line && piecePos < line.length) {
+          // Get the piece character at this position
+          const piece = line[piecePos];
+          
+          // We want to replace "X  " with "[X]" where X is the piece
+          // This maintains the 3-character width per square
+          const before = line.substring(0, piecePos - 1);  // Everything before the space before the piece
+          const after = line.substring(piecePos + 2);      // Everything after the two spaces after the piece
+          boardLines[lineIndex] = before + '[' + piece + ']' + after;
+        }
+      };
+      
+      // Mark the source square (from)
+      if (fromRank >= 0 && fromRank < 8) {
+        markSquare(fromRank + 1, fromFile);
+      }
+      
+      // Mark the destination square (to) 
+      if (toRank >= 0 && toRank < 8) {
+        markSquare(toRank + 1, toFile);
+      }
     }
     
-    // Add ply information
+    // Reconstruct the board
+    let board = boardLines.join('\n');
+    
+    // Add ban information below the board
+    if (this._currentBannedMove) {
+      board += `\nBanned: ${this._currentBannedMove.from}→${this._currentBannedMove.to}`;
+    }
+    
+    // Add ply and turn information
     board += `\nPly: ${this._ply} (${this.getActionType()} by ${this.getActivePlayer()})`;
+    
+    // Add whose pieces move next
+    const nextMover = this.nextMoveColor();
+    board += `\nNext move: ${nextMover}`;
     
     return board;
   }
