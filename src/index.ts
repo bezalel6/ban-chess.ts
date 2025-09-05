@@ -1,4 +1,6 @@
 export { BanChess } from './BanChess.js';
+export { BanChessEngine } from './BanChessEngine.js';
+export type { EngineConfig } from './BanChessEngine.js';
 export type { 
   Move, 
   Ban, 
