@@ -212,8 +212,37 @@ export class BanChessEngine {
         continue;
       }
       
+      // Check if this action caused immediate checkmate
+      if (result.flags?.banCausedCheckmate || result.flags?.checkmate) {
+        // Immediate win for the player who just moved
+        const winScore = maximizing ? 10000 - (10 - depth) : -10000 + (10 - depth);
+        if (maximizing && winScore > bestScore) {
+          bestScore = winScore;
+          bestAction = action;
+        } else if (!maximizing && winScore < bestScore) {
+          bestScore = winScore;
+          bestAction = action;
+        }
+        
+        // This is the best possible outcome, we can stop searching
+        if (maximizing) {
+          alpha = Math.max(alpha, bestScore);
+        } else {
+          beta = Math.min(beta, bestScore);
+        }
+        
+        if (alpha >= beta) {
+          break;
+        }
+        continue;
+      }
+      
       // Recursively evaluate
-      const evalResult = this.minimax(gameCopy, depth - 1, alpha, beta, !maximizing);
+      // CRITICAL: In Ban Chess, check if the SAME player continues (e.g., move then ban)
+      const nextPlayer = gameCopy.getActivePlayer();
+      const currentPlayer = game.getActivePlayer();
+      const flipMaximizing = nextPlayer !== currentPlayer;
+      const evalResult = this.minimax(gameCopy, depth - 1, alpha, beta, flipMaximizing ? !maximizing : maximizing);
       
       if (maximizing) {
         if (evalResult.score > bestScore) {
@@ -253,7 +282,15 @@ export class BanChessEngine {
    * Evaluate the current position
    */
   private evaluatePosition(game: BanChess): number {
-    // Check for game over states
+    // Check for game over states including ban-caused checkmate
+    // Note: After a ban causes checkmate, the flags are set but gameOver() might not reflect it
+    const lastEntry = game.history()[game.history().length - 1];
+    if (lastEntry?.flags?.banCausedCheckmate) {
+      // The last action caused checkmate via ban - the player who banned wins
+      // Since evaluation is from current player's perspective, and they can't move, they lost
+      return -10000;
+    }
+    
     if (game.inCheckmate()) {
       // Current player is in checkmate - very bad for them
       return -10000;

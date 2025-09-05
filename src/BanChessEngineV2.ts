@@ -484,8 +484,16 @@ export class BanChessEngineV2 {
       
       // Principal variation search
       if (i === 0) {
-        // Search first move with full window
-        score = -this.alphaBeta(gameCopy, depth - 1, ply + 1, -beta, -alpha, pvNode).score;
+        // Check if same player continues
+        const nextPlayer = gameCopy.getActivePlayer();
+        const currentPlayer = game.getActivePlayer();
+        const samePlayer = nextPlayer === currentPlayer;
+        
+        // Search first move with full window (negate only if player changes)
+        const pvScore = this.alphaBeta(gameCopy, depth - 1, ply + 1, 
+                                       samePlayer ? alpha : -beta, 
+                                       samePlayer ? beta : -alpha, pvNode).score;
+        score = samePlayer ? pvScore : -pvScore;
       } else {
         // Late move reductions (LMR)
         let reduction = 0;
@@ -494,12 +502,23 @@ export class BanChessEngineV2 {
           reduction = Math.min(reduction, depth - 2);
         }
         
-        // Search with null window
-        score = -this.alphaBeta(gameCopy, depth - 1 - reduction, ply + 1, -alpha - 1, -alpha, false).score;
+        // CRITICAL: Check if same player continues (Ban Chess specific)
+        const nextPlayer = gameCopy.getActivePlayer();
+        const currentPlayer = game.getActivePlayer();
+        const samePlayer = nextPlayer === currentPlayer;
+        
+        // Search with null window (negate score only if player changes)
+        const nullScore = this.alphaBeta(gameCopy, depth - 1 - reduction, ply + 1, 
+                                         samePlayer ? alpha : -alpha - 1, 
+                                         samePlayer ? beta : -alpha, false).score;
+        score = samePlayer ? nullScore : -nullScore;
         
         // Re-search if it fails high
         if (score > alpha && score < beta) {
-          score = -this.alphaBeta(gameCopy, depth - 1, ply + 1, -beta, -alpha, pvNode).score;
+          const pvScore = this.alphaBeta(gameCopy, depth - 1, ply + 1, 
+                                         samePlayer ? alpha : -beta, 
+                                         samePlayer ? beta : -alpha, pvNode).score;
+          score = samePlayer ? pvScore : -pvScore;
         }
       }
       
