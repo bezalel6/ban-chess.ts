@@ -545,8 +545,22 @@ export class BanChess {
    * ```
    */
   inCheckmate(): boolean {
-    // Check the underlying chess position directly
-    return this.chess.inCheckmate();
+    // First check the underlying chess position
+    if (this.chess.inCheckmate()) {
+      return true;
+    }
+    
+    // In Ban Chess, if it's a move turn, the king is in check, 
+    // and there are no legal moves (because the only escape was banned), 
+    // it's checkmate
+    if (this.getActionType() === 'move' && this.chess.inCheck()) {
+      const legalMoves = this.legalMoves();
+      if (legalMoves.length === 0) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   /**
@@ -554,8 +568,22 @@ export class BanChess {
    * @returns true if stalemate (no legal moves but not in check), false otherwise
    */
   inStalemate(): boolean {
-    // Check the underlying chess position directly
-    return this.chess.inStalemate();
+    // First check the underlying chess position
+    if (this.chess.inStalemate()) {
+      return true;
+    }
+    
+    // In Ban Chess, if it's a move turn, not in check,
+    // and there are no legal moves (all moves were banned), 
+    // it's stalemate
+    if (this.getActionType() === 'move' && !this.chess.inCheck()) {
+      const legalMoves = this.legalMoves();
+      if (legalMoves.length === 0) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   /**
@@ -1059,6 +1087,48 @@ export class BanChess {
   }
   
   /**
+   * Convert a standard chess FEN to Ban Chess FEN format
+   * @param standardFen - Standard 6-field chess FEN string
+   * @param ply - The current ply number (must be provided)
+   * @param currentBan - Optional current banned move (only valid at even plies)
+   * @returns Ban Chess FEN string with the 7th field
+   * @throws Error if ply is not provided or if ban is provided at wrong ply
+   * @example
+   * ```typescript
+   * const standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+   * const banChessFen = BanChess.fromStandardFEN(standardFen, 1);
+   * // Returns: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 1"
+   * 
+   * // With a ban at ply 2:
+   * const fenWithBan = BanChess.fromStandardFEN(standardFen, 2, { from: 'e7', to: 'e5' });
+   * // Returns: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 2:e7e5"
+   * ```
+   */
+  static fromStandardFEN(standardFen: string, ply: number, currentBan?: Ban): string {
+    if (typeof ply !== 'number' || ply < 1) {
+      throw new Error('Ply must be a positive number');
+    }
+    
+    const parts = standardFen.split(' ');
+    if (parts.length !== 6) {
+      throw new Error('Invalid standard FEN: must have exactly 6 fields');
+    }
+    
+    // Validate ban is only at even plies (move turn)
+    if (currentBan && ply % 2 === 1) {
+      throw new Error(`Cannot have a ban at ply ${ply} (ban phase). Bans only exist at even plies (move phase).`);
+    }
+    
+    // Build the 7th field
+    let banChessField = ply.toString();
+    if (currentBan) {
+      banChessField += `:${currentBan.from}${currentBan.to}`;
+    }
+    
+    return `${standardFen} ${banChessField}`;
+  }
+
+  /**
    * Get the last action as a serialized string with game state indicators
    * @returns The last action in serialized format, or null if no actions
    * @example
@@ -1276,11 +1346,14 @@ export class BanChess {
     const parts = fen.split(' ');
     
     if (parts.length < 7) {
-      // Standard FEN without Ban Chess extension - start at ply 1
-      this.chess = new Chess(fen);
-      this._ply = 1;
-      this._currentBannedMove = null;
-      return;
+      // Standard FEN without Ban Chess extension - this is dangerous!
+      // We don't know what ply we're at, which is critical for Ban Chess
+      throw new Error(
+        'Invalid FEN for Ban Chess: Missing required 7th field with ply information. ' +
+        'Ban Chess FEN must include the ply number as the 7th field (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 1"). ' +
+        'If you want to start a new game, use new BanChess() without arguments. ' +
+        'If loading from standard chess FEN, you must manually specify the ply number.'
+      );
     }
     
     const baseFen = parts.slice(0, 6).join(' ');
