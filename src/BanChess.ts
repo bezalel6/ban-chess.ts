@@ -554,8 +554,13 @@ export class BanChess {
     // and there are no legal moves (because the only escape was banned), 
     // it's checkmate
     if (this.getActionType() === 'move' && this.chess.inCheck()) {
-      const legalMoves = this.legalMoves();
-      if (legalMoves.length === 0) {
+      // Get moves without checking gameOver to avoid circular dependency
+      const chessMoves = this.chess.moves({ verbose: true });
+      const unbannedMoves = this._currentBannedMove 
+        ? chessMoves.filter(m => !(m.from === this._currentBannedMove!.from && m.to === this._currentBannedMove!.to))
+        : chessMoves;
+      
+      if (unbannedMoves.length === 0) {
         return true;
       }
     }
@@ -577,8 +582,13 @@ export class BanChess {
     // and there are no legal moves (all moves were banned), 
     // it's stalemate
     if (this.getActionType() === 'move' && !this.chess.inCheck()) {
-      const legalMoves = this.legalMoves();
-      if (legalMoves.length === 0) {
+      // Get moves without checking gameOver to avoid circular dependency
+      const chessMoves = this.chess.moves({ verbose: true });
+      const unbannedMoves = this._currentBannedMove 
+        ? chessMoves.filter(m => !(m.from === this._currentBannedMove!.from && m.to === this._currentBannedMove!.to))
+        : chessMoves;
+      
+      if (unbannedMoves.length === 0) {
         return true;
       }
     }
