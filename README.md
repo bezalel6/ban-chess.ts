@@ -6,13 +6,35 @@
 
 A TypeScript wrapper library for implementing the **Ban Chess** variant on top of the `chess.ts` library. In Ban Chess, players must navigate around banned moves - each move is preceded by the opponent banning one of their legal options.
 
-**Version 3.0.0** introduces a cleaner ply-based API that makes the game flow crystal clear. Each ban and each move is now treated as a separate ply, eliminating confusion about whose "turn" it is.
+**Version 4.0.0** introduces an interactive CLI, undo functionality, and strict FEN validation for a complete Ban Chess experience.
 
-**Latest**: Automated GUI updates ensure the live demo always uses the newest library version.
+**Version 3.0.0** introduced a cleaner ply-based API that makes the game flow crystal clear. Each ban and each move is now treated as a separate ply, eliminating confusion about whose "turn" it is.
 
 ## Try It Online
 
 You can access this playground to test and experiment with the variant: **[https://bezalel6.github.io/ban-chess.ts/](https://bezalel6.github.io/ban-chess.ts/)**
+
+## Command-Line Interface (CLI)
+
+**New in v4.0.0**: Interactive CLI for playing Ban Chess in your terminal!
+
+```bash
+# Play Ban Chess interactively
+npm run play
+
+# Start with a specific position
+npm run play --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 2:e2e4"
+
+# Show help
+npm run play --help
+```
+
+### CLI Features
+- **Ban Chess Notation (BCN)**: Use algebraic for bans (e2e4), SAN for moves (Nf3, Qxf7+)
+- **Smart Error Messages**: Explains why moves are illegal and suggests alternatives
+- **ASCII Board**: Visual board with banned square indicators
+- **Commands**: board, fen, load, new, pgn, history, undo, help, quit
+- **Checkmate Detection**: Properly detects and announces ban-caused checkmates
 
 ## GUI
 
@@ -142,6 +164,7 @@ class BanChess {
   pgn(): string;  // Returns PGN with ban annotations
   history(): HistoryEntry[];
   reset(): void;
+  undo(): boolean;  // Undo last action (ban or move)
   
   // Game status
   inCheck(): boolean;

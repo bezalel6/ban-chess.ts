@@ -5,6 +5,37 @@ All notable changes to ban-chess.ts will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2025-01-06
+
+### Added
+- **Interactive CLI**: New command-line interface for playing Ban Chess
+  - Supports Ban Chess Notation (BCN): algebraic for bans (e2e4), SAN for moves (Nf3, Qxf7+)
+  - Commands: board, fen, load, new, pgn, history, undo, help, quit
+  - Smart error messages that explain why moves are illegal
+  - ASCII board visualization with banned square indicators
+  - Checkmate detection and announcement
+  - FEN loading/saving with strict validation
+  - Command-line arguments: `--fen` to start with position, `--help` for usage
+- **Undo Functionality**: New `undo()` method to revert the last action
+  - Correctly handles both ban and move undos
+  - Restores board position and active bans
+  - Maintains proper game state and history
+  - Returns `true` if undo was successful, `false` if nothing to undo
+- **Strict FEN Validation**: Enhanced FEN parsing with Ban Chess validation
+  - Validates ply field format: `ply[:ban][indicator]`
+  - Ensures bans only exist at even plies (after moves)
+  - Validates square notation (a-h, 1-8)
+  - Throws descriptive errors for invalid FEN strings
+
+### Changed
+- **FEN Loading**: Now strictly validates Ban Chess FEN format
+  - Standard FEN without 7th field defaults to ply 1
+  - Invalid Ban Chess fields are rejected with clear error messages
+
+### Fixed
+- Checkmate detection for ban-caused checkmates now working correctly
+- FEN parsing properly validates game state consistency
+
 ## [3.1.0] - 2025-01-04
 
 ### Added

@@ -855,6 +855,50 @@ export class BanChess {
   }
   
   /**
+   * Undoes the last action (ban or move)
+   * @returns true if undo was successful, false if there's nothing to undo
+   * @example
+   * ```typescript
+   * game.play({ ban: { from: 'e2', to: 'e4' } });
+   * game.play({ move: { from: 'd2', to: 'd4' } });
+   * game.undo(); // Undoes the move d2-d4
+   * game.undo(); // Undoes the ban e2-e4
+   * ```
+   */
+  undo(): boolean {
+    if (this._history.length === 0) {
+      return false;
+    }
+
+    const lastEntry = this._history[this._history.length - 1];
+    
+    // Remove the last history entry
+    this._history.pop();
+    this._ply--;
+
+    if (lastEntry.actionType === 'move') {
+      // For moves: use chess.ts's built-in undo
+      const undoneMove = this.chess.undo();
+      if (!undoneMove) {
+        // This shouldn't happen if our history is consistent
+        // Restore the history entry we removed
+        this._history.push(lastEntry);
+        this._ply++;
+        return false;
+      }
+      
+      // Restore the ban that was active when this move was played
+      this._currentBannedMove = lastEntry.bannedMove || null;
+    } else {
+      // For bans: just clear the banned move
+      // The board doesn't change at all!
+      this._currentBannedMove = null;
+    }
+
+    return true;
+  }
+  
+  /**
    * Returns an ASCII representation of the current board position
    * Shows the banned move with brackets around the affected squares
    * @returns ASCII string representation of the board
@@ -1226,61 +1270,90 @@ export class BanChess {
    * Loads a game position from an extended FEN string
    * @param fen - FEN string with optional 7th field for ply number and ban state
    * @private
+   * @throws Error if the Ban Chess FEN format is invalid
    */
   private loadFromFEN(fen: string): void {
     const parts = fen.split(' ');
     
     if (parts.length < 7) {
+      // Standard FEN without Ban Chess extension - start at ply 1
       this.chess = new Chess(fen);
+      this._ply = 1;
+      this._currentBannedMove = null;
       return;
     }
     
     const baseFen = parts.slice(0, 6).join(' ');
     let plyState = parts[6];
     
+    // Load the chess position first
     this.chess = new Chess(baseFen);
     
-    // Extract PGN indicator if present
-    let indicator = '';
+    // Validate and parse the Ban Chess field
     if (plyState && plyState !== '-') {
-      // Check if the plyState ends with a PGN indicator
+      // Remove indicator if present
+      let indicator = '';
       const lastChar = plyState[plyState.length - 1];
       if (lastChar === '+' || lastChar === '#' || lastChar === '=') {
         indicator = lastChar;
-        plyState = plyState.slice(0, -1); // Remove indicator from plyState
+        plyState = plyState.slice(0, -1);
       }
       
+      // Validate the Ban Chess field format
+      const banChessPattern = /^(\d+)(:[a-h][1-8][a-h][1-8])?$/;
+      if (!banChessPattern.test(plyState)) {
+        throw new Error(`Invalid Ban Chess FEN field: "${parts[6]}". Expected format: ply[:ban][indicator]`);
+      }
+      
+      // Parse ply and ban
       if (plyState.includes(':')) {
         const [plyStr, banState] = plyState.split(':');
-        this._ply = parseInt(plyStr, 10) || 1;
+        const ply = parseInt(plyStr, 10);
         
-        if (banState && banState.length >= 4) {
-          this._currentBannedMove = {
-            from: banState.substring(0, 2) as Square,
-            to: banState.substring(2, 4) as Square
-          };
+        if (isNaN(ply) || ply < 1) {
+          throw new Error(`Invalid ply number in FEN: ${plyStr}`);
         }
-      } else {
-        // Legacy format or just ply number
-        const plyNum = parseInt(plyState, 10);
-        if (!isNaN(plyNum)) {
-          this._ply = plyNum;
+        
+        // Validate that bans only exist at even plies
+        if (ply % 2 === 1) {
+          throw new Error(`Invalid Ban Chess FEN: Cannot have an active ban at ply ${ply} (ban phase)`);
         }
-        // Support legacy ban state format for backward compatibility
-        else if (plyState.startsWith('b:') || plyState.startsWith('w:')) {
-          const [player, value] = plyState.split(':');
-          if (value !== 'ban' && value.length === 4) {
-            this._currentBannedMove = {
-              from: value.substring(0, 2) as Square,
-              to: value.substring(2, 4) as Square
-            };
+        
+        // Validate ban squares
+        if (banState && banState.length === 4) {
+          const from = banState.substring(0, 2);
+          const to = banState.substring(2, 4);
+          
+          // Validate square format
+          if (!/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) {
+            throw new Error(`Invalid ban squares in FEN: ${from}-${to}`);
           }
+          
+          this._currentBannedMove = {
+            from: from as Square,
+            to: to as Square
+          };
+        } else {
+          throw new Error(`Invalid ban format in FEN: ${banState}`);
         }
+        
+        this._ply = ply;
+      } else {
+        // Just ply number, no ban
+        const ply = parseInt(plyState, 10);
+        
+        if (isNaN(ply) || ply < 1) {
+          throw new Error(`Invalid ply number in FEN: ${plyState}`);
+        }
+        
+        this._ply = ply;
+        this._currentBannedMove = null;
       }
+    } else {
+      // Empty 7th field - treat as ply 1
+      this._ply = 1;
+      this._currentBannedMove = null;
     }
-    
-    // Note: The indicator represents the current game state but doesn't need to be stored
-    // The actual game state is determined by the chess.ts position
   }
   
   /**

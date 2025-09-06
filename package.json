@@ -29,7 +29,9 @@
     "prepublishOnly": "npm run build",
     "postpublish": "npm run update-gui",
     "update-gui": "node scripts/update-gui.js",
-    "release": "npm version patch && npm publish && git push --follow-tags"
+    "release": "npm version patch && npm publish && git push --follow-tags",
+    "cli": "npm run build && node dist/cjs/cli.js",
+    "play": "npm run build && node dist/cjs/cli.js"
   },
   "keywords": [
     "chess",
